@@ -1,0 +1,17 @@
+.vscode
+.idea
+
+.venv
+*.egg-info
+
+.pytest_cache
+.mypy_cache
+__pycache__
+.coverage
+coverage.xml
+
+dist
+
+.env
+
+*.py.*.tmp
