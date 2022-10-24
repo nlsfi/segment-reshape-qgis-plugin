@@ -14,11 +14,11 @@ from qgis.core import (
     QgsWkbTypes,
 )
 
-from segment_reshape.geometry.replace_segment import (
+from segment_reshape.geometry.reshape import (
     GeometryTransformationError,
-    SegmentCommonPart,
-    SegmentEdge,
-    make_edits_for_new_segment,
+    ReshapeCommonPart,
+    ReshapeEdge,
+    make_reshape_edits,
 )
 
 
@@ -76,10 +76,10 @@ def test_editing_enabled_for_non_editable_layers(
     assert not layer1.isEditable()
     assert not layer2.isEditable()
 
-    make_edits_for_new_segment(
+    make_reshape_edits(
         [
-            SegmentCommonPart(layer1, features1[0], [0, 1], False),
-            SegmentCommonPart(layer2, features2[0], [0, 1], False),
+            ReshapeCommonPart(layer1, features1[0], [0, 1], False),
+            ReshapeCommonPart(layer2, features2[0], [0, 1], False),
         ],
         [],
         QgsLineString([(0, 0), (1, 1)]),
@@ -101,12 +101,12 @@ def test_edits_made_in_single_edit_command_for_each_layer(
         "l2", ["LINESTRING(0 0, 1 1)", "LINESTRING(0 0, 1 1)"]
     )
 
-    make_edits_for_new_segment(
+    make_reshape_edits(
         [
-            SegmentCommonPart(layer1, features1[0], [0, 1], False),
-            SegmentCommonPart(layer1, features1[1], [0, 1], False),
-            SegmentCommonPart(layer2, features2[0], [0, 1], False),
-            SegmentCommonPart(layer2, features2[1], [0, 1], False),
+            ReshapeCommonPart(layer1, features1[0], [0, 1], False),
+            ReshapeCommonPart(layer1, features1[1], [0, 1], False),
+            ReshapeCommonPart(layer2, features2[0], [0, 1], False),
+            ReshapeCommonPart(layer2, features2[1], [0, 1], False),
         ],
         [],
         QgsLineString([(0, 0), (1, 1)]),
@@ -135,12 +135,12 @@ def test_existing_edit_command_allowed_without_modifications(
     layer2.startEditing()
     layer2.beginEditCommand("undo2")
 
-    make_edits_for_new_segment(
+    make_reshape_edits(
         [
-            SegmentCommonPart(layer1, features1[0], [0, 1], False),
-            SegmentCommonPart(layer1, features1[1], [0, 1], False),
-            SegmentCommonPart(layer2, features2[0], [0, 1], False),
-            SegmentCommonPart(layer2, features2[1], [0, 1], False),
+            ReshapeCommonPart(layer1, features1[0], [0, 1], False),
+            ReshapeCommonPart(layer1, features1[1], [0, 1], False),
+            ReshapeCommonPart(layer2, features2[0], [0, 1], False),
+            ReshapeCommonPart(layer2, features2[1], [0, 1], False),
         ],
         [],
         QgsLineString([(0, 0), (1, 1)]),
@@ -174,12 +174,12 @@ def test_edit_commands_for_editable_layers_removed_on_error(
     )
 
     with pytest.raises(GeometryTransformationError, match="mocked error"):
-        make_edits_for_new_segment(
+        make_reshape_edits(
             [
-                SegmentCommonPart(layer1, features1[0], [0, 1], False),
-                SegmentCommonPart(layer1, features1[1], [0, 1], False),
-                SegmentCommonPart(layer2, features2[0], [0, 1], False),
-                SegmentCommonPart(layer2, features2[1], [0, 1], False),
+                ReshapeCommonPart(layer1, features1[0], [0, 1], False),
+                ReshapeCommonPart(layer1, features1[1], [0, 1], False),
+                ReshapeCommonPart(layer2, features2[0], [0, 1], False),
+                ReshapeCommonPart(layer2, features2[1], [0, 1], False),
             ],
             [],
             QgsLineString([(0, 0), (1, 1)]),
@@ -212,12 +212,12 @@ def test_non_editable_layer_rolled_back_on_error(
     )
 
     with pytest.raises(GeometryTransformationError, match="mocked error"):
-        make_edits_for_new_segment(
+        make_reshape_edits(
             [
-                SegmentCommonPart(layer1, features1[0], [0, 1], False),
-                SegmentCommonPart(layer1, features1[1], [0, 1], False),
-                SegmentCommonPart(layer2, features2[0], [0, 1], False),
-                SegmentCommonPart(layer2, features2[1], [0, 1], False),
+                ReshapeCommonPart(layer1, features1[0], [0, 1], False),
+                ReshapeCommonPart(layer1, features1[1], [0, 1], False),
+                ReshapeCommonPart(layer2, features2[0], [0, 1], False),
+                ReshapeCommonPart(layer2, features2[1], [0, 1], False),
             ],
             [],
             QgsLineString([(0, 0), (1, 1)]),
@@ -251,12 +251,12 @@ def test_existing_edit_command_not_removed_on_error(
     )
 
     with pytest.raises(GeometryTransformationError, match="mocked error"):
-        make_edits_for_new_segment(
+        make_reshape_edits(
             [
-                SegmentCommonPart(layer1, features1[0], [0, 1], False),
-                SegmentCommonPart(layer1, features1[1], [0, 1], False),
-                SegmentCommonPart(layer2, features2[0], [0, 1], False),
-                SegmentCommonPart(layer2, features2[1], [0, 1], False),
+                ReshapeCommonPart(layer1, features1[0], [0, 1], False),
+                ReshapeCommonPart(layer1, features1[1], [0, 1], False),
+                ReshapeCommonPart(layer2, features2[0], [0, 1], False),
+                ReshapeCommonPart(layer2, features2[1], [0, 1], False),
             ],
             [],
             QgsLineString([(0, 0), (1, 1)]),
@@ -276,10 +276,10 @@ def test_edits_applied_to_layer_features(
     layer1, features1 = preset_features_layer_factory("l1", ["LINESTRING(0 0, 1 1)"])
     layer2, features2 = preset_features_layer_factory("l2", ["LINESTRING(0 0, 1 1)"])
 
-    make_edits_for_new_segment(
+    make_reshape_edits(
         [
-            SegmentCommonPart(layer1, features1[0], [0, 1], False),
-            SegmentCommonPart(layer2, features2[0], [0, 1], False),
+            ReshapeCommonPart(layer1, features1[0], [0, 1], False),
+            ReshapeCommonPart(layer2, features2[0], [0, 1], False),
         ],
         [],
         QgsLineString([(2, 2), (3, 3)]),
@@ -297,9 +297,9 @@ def test_reshape_with_invalid_indices_fails(
     layer1, features1 = preset_features_layer_factory("l1", ["LINESTRING(0 0, 1 1)"])
 
     with pytest.raises(GeometryTransformationError, match="vertex"):
-        make_edits_for_new_segment(
+        make_reshape_edits(
             [
-                SegmentCommonPart(layer1, features1[0], [1, 2], False),
+                ReshapeCommonPart(layer1, features1[0], [1, 2], False),
             ],
             [],
             QgsLineString([(2, 2), (3, 3)]),
@@ -313,9 +313,9 @@ def test_common_point_reshaped(
 ):
     layer1, features1 = preset_features_layer_factory("l1", ["POINT(0 0)"])
 
-    make_edits_for_new_segment(
+    make_reshape_edits(
         [
-            SegmentCommonPart(layer1, features1[0], [0], False),
+            ReshapeCommonPart(layer1, features1[0], [0], False),
         ],
         [],
         QgsPoint(1, 1),
@@ -332,9 +332,9 @@ def test_common_point_reshaped_by_line_fails(
     layer1, features1 = preset_features_layer_factory("l1", ["POINT(0 0)"])
 
     with pytest.raises(GeometryTransformationError, match="vertex"):
-        make_edits_for_new_segment(
+        make_reshape_edits(
             [
-                SegmentCommonPart(layer1, features1[0], [0], False),
+                ReshapeCommonPart(layer1, features1[0], [0], False),
             ],
             [],
             QgsLineString([(1, 1), (2, 2)]),
@@ -350,9 +350,9 @@ def test_common_multipoint_reshaped(
         "l1", ["MULTIPOINT(0 0, 1 1, 2 2)"]
     )
 
-    make_edits_for_new_segment(
+    make_reshape_edits(
         [
-            SegmentCommonPart(layer1, features1[0], [1], False),
+            ReshapeCommonPart(layer1, features1[0], [1], False),
         ],
         [],
         QgsPoint(1.5, 1.5),
@@ -370,9 +370,9 @@ def test_common_multipoint_reshaped_by_line_from_multiple_vertices(
         "l1", ["MULTIPOINT(0 0, 1 1, 2 2, 3 3)"]
     )
 
-    make_edits_for_new_segment(
+    make_reshape_edits(
         [
-            SegmentCommonPart(layer1, features1[0], [1, 2], False),
+            ReshapeCommonPart(layer1, features1[0], [1, 2], False),
         ],
         [],
         QgsLineString([(1.5, 1.5), (2.5, 2.5)]),
@@ -390,9 +390,9 @@ def test_common_multipoint_reshaped_by_line_from_single_vertex(
         "l1", ["MULTIPOINT(0 0, 1 1, 2 2)"]
     )
 
-    make_edits_for_new_segment(
+    make_reshape_edits(
         [
-            SegmentCommonPart(layer1, features1[0], [1], False),
+            ReshapeCommonPart(layer1, features1[0], [1], False),
         ],
         [],
         QgsLineString([(1.5, 1.5), (2.5, 2.5)]),
@@ -478,9 +478,9 @@ def test_common_line_segment_reshaped(
     reshape = QgsLineString()
     reshape.fromWkt(reshape_wkt)
 
-    make_edits_for_new_segment(
+    make_reshape_edits(
         [
-            SegmentCommonPart(layer1, features1[0], indices, False),
+            ReshapeCommonPart(layer1, features1[0], indices, False),
         ],
         [],
         reshape,
@@ -521,9 +521,9 @@ def test_common_multiline_segment_reshaped(
     reshape = QgsLineString()
     reshape.fromWkt(reshape_wkt)
 
-    make_edits_for_new_segment(
+    make_reshape_edits(
         [
-            SegmentCommonPart(layer1, features1[0], indices, False),
+            ReshapeCommonPart(layer1, features1[0], indices, False),
         ],
         [],
         reshape,
@@ -595,9 +595,9 @@ def test_common_polygon_segment_reshaped(
     reshape = QgsLineString()
     reshape.fromWkt(reshape_wkt)
 
-    make_edits_for_new_segment(
+    make_reshape_edits(
         [
-            SegmentCommonPart(layer1, features1[0], indices, False),
+            ReshapeCommonPart(layer1, features1[0], indices, False),
         ],
         [],
         reshape,
@@ -634,9 +634,9 @@ def test_common_multipolygon_segment_reshaped(
     reshape = QgsLineString()
     reshape.fromWkt(reshape_wkt)
 
-    make_edits_for_new_segment(
+    make_reshape_edits(
         [
-            SegmentCommonPart(layer1, features1[0], indices, False),
+            ReshapeCommonPart(layer1, features1[0], indices, False),
         ],
         [],
         reshape,
@@ -654,9 +654,9 @@ def test_reversed_common_line_segment_reshaped_in_correct_order(
         "l1", ["LINESTRING(0 0, 1 1, 2 2, 3 3)"]
     )
 
-    make_edits_for_new_segment(
+    make_reshape_edits(
         [
-            SegmentCommonPart(layer1, features1[0], [1, 2], is_reversed=True),
+            ReshapeCommonPart(layer1, features1[0], [1, 2], is_reversed=True),
         ],
         [],
         QgsLineString([(2, 3), (1, 2)]),
@@ -674,9 +674,9 @@ def test_reversed_common_polygon_segment_reshaped_in_correct_order(
         "l1", ["POLYGON((0 0, 1 1, 2 2, 3 3, 3 0, 0 0))"]
     )
 
-    make_edits_for_new_segment(
+    make_reshape_edits(
         [
-            SegmentCommonPart(layer1, features1[0], [1, 2], is_reversed=True),
+            ReshapeCommonPart(layer1, features1[0], [1, 2], is_reversed=True),
         ],
         [],
         QgsLineString([(2, 3), (1, 2)]),
@@ -694,9 +694,9 @@ def test_reversed_common_polygon_segment_reshaped_in_correct_order_with_wraparou
         "l1", ["POLYGON((0 0, 1 1, 2 2, 3 3, 3 0, 0 0))"]
     )
 
-    make_edits_for_new_segment(
+    make_reshape_edits(
         [
-            SegmentCommonPart(layer1, features1[0], [4, 0, 1], is_reversed=True),
+            ReshapeCommonPart(layer1, features1[0], [4, 0, 1], is_reversed=True),
         ],
         [],
         QgsLineString([(1.1, 1.1), (0.1, 0.1), (3.1, 0.1)]),
@@ -716,11 +716,11 @@ def test_edge_points_moved_to_match_reshape(
         "l1", ["POINT(0 0)", "POINT(3 3)"]
     )
 
-    make_edits_for_new_segment(
+    make_reshape_edits(
         [],
         [
-            SegmentEdge(layer1, features1[0], 0, is_start=True),
-            SegmentEdge(layer1, features1[1], 0, is_start=False),
+            ReshapeEdge(layer1, features1[0], 0, is_start=True),
+            ReshapeEdge(layer1, features1[1], 0, is_start=False),
         ],
         QgsLineString([(2, 0), (0, 2)]),
     )
@@ -737,11 +737,11 @@ def test_edge_lines_moved_to_match_reshape(
         "l1", ["LINESTRING(0 0, 1 1)", "LINESTRING(3 3, 4 4)"]
     )
 
-    make_edits_for_new_segment(
+    make_reshape_edits(
         [],
         [
-            SegmentEdge(layer1, features1[0], 1, is_start=True),
-            SegmentEdge(layer1, features1[1], 0, is_start=False),
+            ReshapeEdge(layer1, features1[0], 1, is_start=True),
+            ReshapeEdge(layer1, features1[1], 0, is_start=False),
         ],
         QgsLineString([(2, 0), (0, 2)]),
     )
@@ -759,11 +759,11 @@ def test_edge_polygons_moved_to_match_reshape(
         ["POLYGON((0 0, 0 1, 1 1, 1 0, 0 0))", "POLYGON((2 2, 2 3, 3 3, 3 2, 2 2))"],
     )
 
-    make_edits_for_new_segment(
+    make_reshape_edits(
         [],
         [
-            SegmentEdge(layer1, features1[0], 2, is_start=True),
-            SegmentEdge(layer1, features1[1], 0, is_start=False),
+            ReshapeEdge(layer1, features1[0], 2, is_start=True),
+            ReshapeEdge(layer1, features1[1], 0, is_start=False),
         ],
         QgsLineString([(2, 0), (0, 2)]),
     )
@@ -787,9 +787,9 @@ def test_line_segment_collapsed_to_single_point(
     reshape = QgsPoint()
     reshape.fromWkt("POINT(2.5 2.5)")
 
-    make_edits_for_new_segment(
+    make_reshape_edits(
         [
-            SegmentCommonPart(layer1, features1[0], [1, 2, 3], False),
+            ReshapeCommonPart(layer1, features1[0], [1, 2, 3], False),
         ],
         [],
         reshape,
@@ -811,9 +811,9 @@ def test_polygon_segment_collapsed_to_single_point(
     reshape = QgsPoint()
     reshape.fromWkt("POINT(2.5 2.5)")
 
-    make_edits_for_new_segment(
+    make_reshape_edits(
         [
-            SegmentCommonPart(layer1, features1[0], [1, 2, 3], False),
+            ReshapeCommonPart(layer1, features1[0], [1, 2, 3], False),
         ],
         [],
         reshape,
@@ -835,9 +835,9 @@ def test_polygon_segment_collapsed_to_single_point_with_wraparound(
     reshape = QgsPoint()
     reshape.fromWkt("POINT(-1 -3)")
 
-    make_edits_for_new_segment(
+    make_reshape_edits(
         [
-            SegmentCommonPart(layer1, features1[0], [4, 5, 0], False),
+            ReshapeCommonPart(layer1, features1[0], [4, 5, 0], False),
         ],
         [],
         reshape,
@@ -859,9 +859,9 @@ def test_multipolygon_segment_collapsed_to_single_point_with_wraparound(
     reshape = QgsPoint()
     reshape.fromWkt("POINT(6 4)")
 
-    make_edits_for_new_segment(
+    make_reshape_edits(
         [
-            SegmentCommonPart(layer1, features1[0], [7, 4], False),
+            ReshapeCommonPart(layer1, features1[0], [7, 4], False),
         ],
         [],
         reshape,
@@ -900,17 +900,17 @@ def test_segment_collaped_to_single_point_edges_joined(
     reshape = QgsPoint()
     reshape.fromWkt("POINT(2.5 2.5)")
 
-    make_edits_for_new_segment(
+    make_reshape_edits(
         [
-            SegmentCommonPart(layer1, features1[0], [1, 2, 3], False),
+            ReshapeCommonPart(layer1, features1[0], [1, 2, 3], False),
         ],
         [
-            SegmentEdge(layer1, features1[1], 1, is_start=True),
-            SegmentEdge(layer1, features1[2], 0, is_start=True),
-            SegmentEdge(layer1, features1[3], 1, is_start=False),
-            SegmentEdge(layer1, features1[4], 0, is_start=False),
-            SegmentEdge(layer2, features2[0], 0, is_start=True),
-            SegmentEdge(layer2, features2[1], 0, is_start=False),
+            ReshapeEdge(layer1, features1[1], 1, is_start=True),
+            ReshapeEdge(layer1, features1[2], 0, is_start=True),
+            ReshapeEdge(layer1, features1[3], 1, is_start=False),
+            ReshapeEdge(layer1, features1[4], 0, is_start=False),
+            ReshapeEdge(layer2, features2[0], 0, is_start=True),
+            ReshapeEdge(layer2, features2[1], 0, is_start=False),
         ],
         reshape,
     )
@@ -938,9 +938,9 @@ def test_line_segment_expanded_from_single_vertex(
         ["LINESTRING(0 0, 1 1, 2 2)"],
     )
 
-    make_edits_for_new_segment(
+    make_reshape_edits(
         [
-            SegmentCommonPart(layer1, features1[0], [1], False),
+            ReshapeCommonPart(layer1, features1[0], [1], False),
         ],
         [],
         QgsLineString([(0.5, 0.5), (1.5, 1.5)]),
@@ -959,9 +959,9 @@ def test_polygon_segment_expanded_from_single_vertex(
         ["POLYGON((0 0, 1 1, 2 2, 3 3, 4 4, 4 0, 0 0))"],
     )
 
-    make_edits_for_new_segment(
+    make_reshape_edits(
         [
-            SegmentCommonPart(layer1, features1[0], [2], False),
+            ReshapeCommonPart(layer1, features1[0], [2], False),
         ],
         [],
         QgsLineString([(1.5, 1.5), (2.5, 2.5)]),
@@ -982,9 +982,9 @@ def test_polygon_fully_replaced_by_reshape(
         ["POLYGON((0 0, 0 1, 1 1, 1 0, 0 0))"],
     )
 
-    make_edits_for_new_segment(
+    make_reshape_edits(
         [
-            SegmentCommonPart(layer1, features1[0], [0, 1, 2, 3], False),
+            ReshapeCommonPart(layer1, features1[0], [0, 1, 2, 3], False),
         ],
         [],
         QgsLineString([(1, 1), (1, 2), (2, 2), (2, 1), (1, 1)]),

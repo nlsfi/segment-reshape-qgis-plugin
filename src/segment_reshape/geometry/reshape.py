@@ -39,7 +39,7 @@ class GeometryTransformationError(Exception):
 
 
 @dataclass
-class SegmentCommonPart:
+class ReshapeCommonPart:
     layer: QgsVectorLayer
     feature: QgsFeature
     vertex_indices: List[int]
@@ -47,7 +47,7 @@ class SegmentCommonPart:
 
 
 @dataclass
-class SegmentEdge:
+class ReshapeEdge:
     layer: QgsVectorLayer
     feature: QgsFeature
     vertex_index: int
@@ -94,61 +94,61 @@ def _set_editable_and_begin_edit_command_once(layer: QgsVectorLayer) -> None:
     _current_edit_command_layers.get().append(layer)
 
 
-def make_edits_for_new_segment(
-    segment_common_parts: List[SegmentCommonPart],
-    segment_edges: List[SegmentEdge],
-    reshaped_segment: Union[QgsPoint, QgsLineString],
+def make_reshape_edits(
+    common_parts: List[ReshapeCommonPart],
+    edges: List[ReshapeEdge],
+    reshape_geometry: Union[QgsPoint, QgsLineString],
 ) -> None:
     # no crs support yet
 
     with _wrap_all_edit_commands():
-        _replace_segments(segment_common_parts, reshaped_segment)
-        if isinstance(reshaped_segment, QgsPoint):
-            _move_edges(segment_edges, reshaped_segment, reshaped_segment)
+        _reshape_common_parts(common_parts, reshape_geometry)
+        if isinstance(reshape_geometry, QgsPoint):
+            _move_edges(edges, reshape_geometry, reshape_geometry)
         else:
             _move_edges(
-                segment_edges,
-                reshaped_segment.startPoint(),
-                reshaped_segment.endPoint(),
+                edges,
+                reshape_geometry.startPoint(),
+                reshape_geometry.endPoint(),
             )
 
 
-def _replace_segments(
-    to_replace_common_parts: List[SegmentCommonPart],
-    new_segment: Union[QgsPoint, QgsLineString],
+def _reshape_common_parts(
+    common_parts: List[ReshapeCommonPart],
+    reshape_geometry: Union[QgsPoint, QgsLineString],
 ) -> None:
-    for segment_common_part in to_replace_common_parts:
-        _set_editable_and_begin_edit_command_once(segment_common_part.layer)
-        new_geometry = _replace_geometry_segment(
-            segment_common_part.feature.geometry(),
-            segment_common_part.vertex_indices,
+    for common_part in common_parts:
+        _set_editable_and_begin_edit_command_once(common_part.layer)
+        new_geometry = _reshape_geometry(
+            common_part.feature.geometry(),
+            common_part.vertex_indices,
             (
-                new_segment.reversed()
-                if isinstance(new_segment, QgsLineString)
-                and segment_common_part.is_reversed
-                else new_segment
+                reshape_geometry.reversed()
+                if isinstance(reshape_geometry, QgsLineString)
+                and common_part.is_reversed
+                else reshape_geometry
             ),
         )
         _update_geometry_to_layer_feature(
-            segment_common_part.layer,
-            segment_common_part.feature,
+            common_part.layer,
+            common_part.feature,
             new_geometry,
         )
 
 
-def _replace_geometry_segment(
+def _reshape_geometry(
     original: QgsGeometry,
     vertex_indices: List[int],
-    reshaped_segment: Union[QgsPoint, QgsLineString],
+    reshape_geometry: Union[QgsPoint, QgsLineString],
 ) -> QgsGeometry:
     new = clone_geometry_safely(original)
 
-    if isinstance(reshaped_segment, QgsPoint):
+    if isinstance(reshape_geometry, QgsPoint):
         # move the first replaced vertex
-        if not new.moveVertex(reshaped_segment, vertex_indices[0]):
+        if not new.moveVertex(reshape_geometry, vertex_indices[0]):
             raise GeometryTransformationError(
                 f"could not move vertex {vertex_indices[0]}"
-                f" on {new} to {reshaped_segment}"
+                f" on {new} to {reshape_geometry}"
             )
         # delete rest in reverse order
         for deleted_index in sorted(vertex_indices[1:], reverse=True):
@@ -161,13 +161,13 @@ def _replace_geometry_segment(
         # cleanup last in case a full polygon is redrawn
         if (
             original.type() == QgsWkbTypes.GeometryType.PolygonGeometry
-            and reshaped_segment.endPoint() == reshaped_segment.startPoint()
+            and reshape_geometry.endPoint() == reshape_geometry.startPoint()
         ):
-            reshaped_segment = QgsLineString(list(reshaped_segment.vertices())[:-1])
+            reshape_geometry = QgsLineString(list(reshape_geometry.vertices())[:-1])
 
         # add vertices before the first replaced vertex
         min_vertex_index = min(vertex_indices)
-        for new_vertex_index, new_vertex in enumerate(reshaped_segment.vertices()):
+        for new_vertex_index, new_vertex in enumerate(reshape_geometry.vertices()):
             add_before_index = min_vertex_index + new_vertex_index
             if not new.insertVertex(new_vertex, add_before_index):
                 raise GeometryTransformationError(
@@ -175,7 +175,7 @@ def _replace_geometry_segment(
                     f" before {add_before_index} on {new}"
                 )
         # delete replace vertices that were moved by the added count in reverse order
-        added_vertex_count = reshaped_segment.vertexCount()
+        added_vertex_count = reshape_geometry.vertexCount()
         for original_delete_index in sorted(vertex_indices, reverse=True):
             deleted_index = original_delete_index + added_vertex_count
             if not new.deleteVertex(deleted_index):
@@ -187,18 +187,18 @@ def _replace_geometry_segment(
 
 
 def _move_edges(
-    to_move_edges: List[SegmentEdge], new_start: QgsPoint, new_end: QgsPoint
+    edges: List[ReshapeEdge], new_start: QgsPoint, new_end: QgsPoint
 ) -> None:
-    for segment_edge in to_move_edges:
-        _set_editable_and_begin_edit_command_once(segment_edge.layer)
+    for edge in edges:
+        _set_editable_and_begin_edit_command_once(edge.layer)
         new_geometry = _move_vertex(
-            segment_edge.feature.geometry(),
-            segment_edge.vertex_index,
-            new_start if segment_edge.is_start else new_end,
+            edge.feature.geometry(),
+            edge.vertex_index,
+            new_start if edge.is_start else new_end,
         )
         _update_geometry_to_layer_feature(
-            segment_edge.layer,
-            segment_edge.feature,
+            edge.layer,
+            edge.feature,
             new_geometry,
         )
 
