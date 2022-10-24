@@ -4,13 +4,13 @@
 
 - Create a venv: `python -m venv .venv --system-site-packages`
   - For Windows use `<osgeo>/apps/Python39/python.exe` (this requires some dll+pth patching, see [OSGeo4W issue])
-- Install requirements: `pip install -r requirements.txt -r requirements-dev.txt --no-deps --only-binary=:all:`
-  - `pip-sync requirements.txt requirements-dev.txt` can be used if `pip-tools` is installed
+- Install requirements: `pip install -r requirements.txt--no-deps --only-binary=:all:`
+  - `pip-sync requirements.txt` can be used if `pip-tools` is installed
 - Run tests: `pytest`
 
 ## Requirements changes
 
-This project uses `pip-tools`. To update requirements, do `pip install pip-tools`, change `requirements.in` (or `-dev` equivalent) and use `pip-compile requirements.in` to generate new `requirements.txt` with fixed versions.
+This project uses `pip-tools`. To update requirements, do `pip install pip-tools`, change `requirements.in` and use `pip-compile requirements.in` to generate new `requirements.txt` with fixed versions.
 
 ## Code style
 
