@@ -14,7 +14,6 @@ from qgis.core import (
     QgsWkbTypes,
 )
 
-from segment_reshape.geometry import reshape as reshape_module
 from segment_reshape.geometry.reshape import (
     GeometryTransformationError,
     ReshapeCommonPart,
@@ -169,11 +168,9 @@ def test_edit_commands_for_editable_layers_removed_on_error(
     layer1.startEditing()
     layer2.startEditing()
 
-    mocker.patch.object(
-        reshape_module,
-        "_move_edges",
+    mocker.patch(
+        "segment_reshape.geometry.reshape._move_edges",
         side_effect=GeometryTransformationError("mocked error"),
-        autospec=True,
     )
 
     with pytest.raises(GeometryTransformationError, match="mocked error"):
@@ -209,11 +206,9 @@ def test_non_editable_layer_rolled_back_on_error(
         "l2", ["LINESTRING(0 0, 1 1)", "LINESTRING(0 0, 1 1"]
     )
 
-    mocker.patch.object(
-        reshape_module,
-        "_move_edges",
+    mocker.patch(
+        "segment_reshape.geometry.reshape._move_edges",
         side_effect=GeometryTransformationError("mocked error"),
-        autospec=True,
     )
 
     with pytest.raises(GeometryTransformationError, match="mocked error"):
@@ -250,11 +245,9 @@ def test_existing_edit_command_not_removed_on_error(
     layer2.startEditing()
     layer2.beginEditCommand("undo2")
 
-    mocker.patch.object(
-        reshape_module,
-        "_move_edges",
+    mocker.patch(
+        "segment_reshape.geometry.reshape._move_edges",
         side_effect=GeometryTransformationError("mocked error"),
-        autospec=True,
     )
 
     with pytest.raises(GeometryTransformationError, match="mocked error"):
