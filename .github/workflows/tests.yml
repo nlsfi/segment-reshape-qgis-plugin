@@ -21,8 +21,7 @@ jobs:
       - uses: actions/checkout@v3
       - run: |
           pip3 install virtualenv && virtualenv .venv --system-site-packages
-      # use plain .ins since .txts are compiled for windows & python 3.9
       - run: |
-          .venv/bin/pip3 install -r requirements.in -r requirements-dev.in
+          .venv/bin/pip3 install -r requirements.txt --no-deps --only-binary=:all:
       - run: |
           .venv/bin/pytest
