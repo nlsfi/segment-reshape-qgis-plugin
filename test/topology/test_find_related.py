@@ -1,3 +1,22 @@
+#  Copyright (C) 2022 National Land Survey of Finland
+#  (https://www.maanmittauslaitos.fi/en).
+#
+#
+#  This file is part of segment-reshape-qgis-plugin.
+#
+#  segment-reshape-qgis-plugin is free software: you can redistribute it and/or
+#  modify it under the terms of the GNU General Public License as published
+#  by the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  segment-reshape-qgis-plugin is distributed in the hope that it will be
+#  useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+#  of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with segment-reshape-qgis-plugin. If not, see <https://www.gnu.org/licenses/>.
+
 from typing import List, Optional, Tuple
 
 import pytest
@@ -186,6 +205,41 @@ def test_get_common_geometries_with_multiple_results_should_return_common_segmen
     assert segment_end_point_results[0].feature == line_feature_2
     assert segment_end_point_results[0].vertex_index == 1
     assert segment_end_point_results[0].is_start is False
+
+
+@pytest.mark.timeout(3)
+def test_get_common_geometries_with_large_features():
+    layer_1 = QgsVectorLayer("layer1")
+    feature = QgsFeature()
+
+    polygon_wkt = "Polygon (("
+    polygon_wkt += ", ".join([f"{x} 0" for x in range(10001)])
+    polygon_wkt += ", ".join([f"1000 {y}" for y in range(10001)])
+    polygon_wkt += ", ".join([f"{x} 1000" for x in range(10001, -1, -1)])
+    polygon_wkt += ", ".join([f"0 {y}" for y in range(10001, -1, -1)])
+    polygon_wkt += "))"
+
+    feature.setGeometry(QgsGeometry.fromWkt(polygon_wkt))
+    assert not feature.geometry().isEmpty()
+
+    intersecting_feature = QgsFeature()
+    linestring_wkt = (
+        "LineString (" + ", ".join([f"{x} 0" for x in range(-5000, 15000)]) + ")"
+    )
+    intersecting_feature.setGeometry(QgsGeometry.fromWkt(linestring_wkt))
+    assert not intersecting_feature.geometry().isEmpty()
+
+    (
+        segment,
+        common_segment_results,
+        segment_end_point_results,
+    ) = find_related.get_common_geometries(
+        layer_1, feature, [(layer_1, intersecting_feature)], QgsPoint(7, 10, 0)
+    )
+
+    assert segment is not None
+    assert len(common_segment_results) == 1
+    assert len(segment_end_point_results) == 0
 
 
 @pytest.mark.parametrize(
