@@ -17,76 +17,212 @@
 #  You should have received a copy of the GNU General Public License
 #  along with segment-reshape-qgis-plugin. If not, see <https://www.gnu.org/licenses/>.
 
+from contextlib import contextmanager
+from contextvars import ContextVar
 from dataclasses import dataclass
-from typing import Any, List
+from typing import Iterator, List, Set, Union
 
-from qgis.core import QgsFeature, QgsGeometry, QgsLineString, QgsPoint, QgsVectorLayer
+from qgis.core import (
+    QgsFeature,
+    QgsGeometry,
+    QgsLineString,
+    QgsPoint,
+    QgsVectorLayer,
+    QgsWkbTypes,
+)
+
+from segment_reshape.utils import clone_geometry_safely
+
+
+class GeometryTransformationError(Exception):
+    pass
 
 
 @dataclass
-class SegmentCommonFeature:
+class SegmentCommonPart:
     layer: QgsVectorLayer
     feature: QgsFeature
-    from_vertex_id: Any
-    to_vertex_id: Any
-    reversed: bool
+    vertex_indices: List[int]
+    is_reversed: bool
 
 
 @dataclass
-class SegmentEndPointFeature:
+class SegmentEdge:
     layer: QgsVectorLayer
     feature: QgsFeature
-    vertex_id: Any
+    vertex_index: int
     is_start: bool
 
 
+_current_edit_command_layers: ContextVar[List[QgsVectorLayer]] = ContextVar(
+    "current_edit_command_layers"
+)
+_set_editable_layer_ids: ContextVar[Set[str]] = ContextVar("set_editable_layer_ids")
+
+
+@contextmanager
+def _wrap_all_edit_commands() -> Iterator[None]:
+    layers: List[QgsVectorLayer] = []
+    set_editable_ids: Set[str] = set()
+    token = _current_edit_command_layers.set(layers)
+    editable_ids_token = _set_editable_layer_ids.set(set_editable_ids)
+    try:
+        yield
+        for layer in layers:
+            layer.endEditCommand()
+    except GeometryTransformationError as e:
+        for layer in layers:
+            layer.destroyEditCommand()
+            if layer.id() in set_editable_ids:
+                layer.rollBack()
+        raise e
+    finally:
+        _current_edit_command_layers.reset(token)
+        _set_editable_layer_ids.reset(editable_ids_token)
+
+
+def _set_editable_and_begin_edit_command_once(layer: QgsVectorLayer) -> None:
+    if layer.isEditCommandActive():
+        return
+
+    if not layer.isEditable():
+        if not layer.startEditing():
+            raise GeometryTransformationError(f"could not start editing on {layer}")
+        _set_editable_layer_ids.get().add(layer.id())
+
+    layer.beginEditCommand("Reshape segment")
+    _current_edit_command_layers.get().append(layer)
+
+
 def make_edits_for_new_segment(
-    common_features: List[SegmentCommonFeature],
-    end_point_features: List[SegmentEndPointFeature],
-    new_segment: QgsLineString,
+    segment_common_parts: List[SegmentCommonPart],
+    segment_edges: List[SegmentEdge],
+    reshaped_segment: Union[QgsPoint, QgsLineString],
 ) -> None:
-    pass
+    # no crs support yet
 
-    # begineditcommand
-
-    # _replace_segments
-    # _replace_vertices
-
-    # endeditcommand
+    with _wrap_all_edit_commands():
+        _replace_segments(segment_common_parts, reshaped_segment)
+        if isinstance(reshaped_segment, QgsPoint):
+            _move_edges(segment_edges, reshaped_segment, reshaped_segment)
+        else:
+            _move_edges(
+                segment_edges,
+                reshaped_segment.startPoint(),
+                reshaped_segment.endPoint(),
+            )
 
 
 def _replace_segments(
-    to_replace: List[SegmentCommonFeature], new_segment: QgsLineString
+    to_replace_common_parts: List[SegmentCommonPart],
+    new_segment: Union[QgsPoint, QgsLineString],
 ) -> None:
-    pass
+    for segment_common_part in to_replace_common_parts:
+        _set_editable_and_begin_edit_command_once(segment_common_part.layer)
+        new_geometry = _replace_geometry_segment(
+            segment_common_part.feature.geometry(),
+            segment_common_part.vertex_indices,
+            (
+                new_segment.reversed()
+                if isinstance(new_segment, QgsLineString)
+                and segment_common_part.is_reversed
+                else new_segment
+            ),
+        )
+        _update_geometry_to_layer_feature(
+            segment_common_part.layer,
+            segment_common_part.feature,
+            new_geometry,
+        )
 
-    # for result in to_replace
-    #   set editable
-    #   do edit (replace_geometry_partially())
-    #   if reversed: kutsutaan replace_geometry_partially käännetyllä new_segmentillä
 
-
-def _move_geometry_segment(
+def _replace_geometry_segment(
     original: QgsGeometry,
-    from_vertex_id: Any,
-    to_vertex_id: Any,
-    new_segment: QgsLineString,
+    vertex_indices: List[int],
+    reshaped_segment: Union[QgsPoint, QgsLineString],
 ) -> QgsGeometry:
-    pass
+    new = clone_geometry_safely(original)
+
+    if isinstance(reshaped_segment, QgsPoint):
+        # move the first replaced vertex
+        if not new.moveVertex(reshaped_segment, vertex_indices[0]):
+            raise GeometryTransformationError(
+                f"could not move vertex {vertex_indices[0]}"
+                f" on {new} to {reshaped_segment}"
+            )
+        # delete rest in reverse order
+        for deleted_index in sorted(vertex_indices[1:], reverse=True):
+            if not new.deleteVertex(deleted_index):
+                raise GeometryTransformationError(
+                    f"could not delete vertex {deleted_index} on {new}"
+                )
+
+    else:
+        # cleanup last in case a full polygon is redrawn
+        if (
+            original.type() == QgsWkbTypes.GeometryType.PolygonGeometry
+            and reshaped_segment.endPoint() == reshaped_segment.startPoint()
+        ):
+            reshaped_segment = QgsLineString(list(reshaped_segment.vertices())[:-1])
+
+        # add vertices before the first replaced vertex
+        min_vertex_index = min(vertex_indices)
+        for new_vertex_index, new_vertex in enumerate(reshaped_segment.vertices()):
+            add_before_index = min_vertex_index + new_vertex_index
+            if not new.insertVertex(new_vertex, add_before_index):
+                raise GeometryTransformationError(
+                    f"could not insert {new_vertex} vertex"
+                    f" before {add_before_index} on {new}"
+                )
+        # delete replace vertices that were moved by the added count in reverse order
+        added_vertex_count = reshaped_segment.vertexCount()
+        for original_delete_index in sorted(vertex_indices, reverse=True):
+            deleted_index = original_delete_index + added_vertex_count
+            if not new.deleteVertex(deleted_index):
+                raise GeometryTransformationError(
+                    f"could not delete vertex {deleted_index} on {new}"
+                )
+
+    return new
 
 
-def _replace_vertices(
-    to_replace: List[SegmentEndPointFeature], start: QgsPoint, end: QgsPoint
+def _move_edges(
+    to_move_edges: List[SegmentEdge], new_start: QgsPoint, new_end: QgsPoint
 ) -> None:
-    pass
-
-    # for result in to_replace
-    #   set editable
-    #   do edit (move_vertex(alkupiste))
-    #   if start_or_end: kutsutaan move_vertex loppupisteellä
+    for segment_edge in to_move_edges:
+        _set_editable_and_begin_edit_command_once(segment_edge.layer)
+        new_geometry = _move_vertex(
+            segment_edge.feature.geometry(),
+            segment_edge.vertex_index,
+            new_start if segment_edge.is_start else new_end,
+        )
+        _update_geometry_to_layer_feature(
+            segment_edge.layer,
+            segment_edge.feature,
+            new_geometry,
+        )
 
 
 def _move_vertex(
-    original: QgsGeometry, vertex_id: Any, new_position: QgsPoint
+    original: QgsGeometry, vertex_index: int, new_position: QgsPoint
 ) -> QgsGeometry:
-    pass
+    new = clone_geometry_safely(original)
+    if not new.moveVertex(new_position, vertex_index):
+        raise GeometryTransformationError(
+            f"could not move vertex {vertex_index} on {new} to {new_position}"
+        )
+    return new
+
+
+def _update_geometry_to_layer_feature(
+    layer: QgsVectorLayer,
+    feature: QgsFeature,
+    new_geometry: QgsGeometry,
+) -> None:
+    if not layer.changeGeometry(
+        feature.id(),
+        new_geometry,
+    ):
+        raise GeometryTransformationError(
+            f"could not update geometry {new_geometry} to fid {feature.id()} on {layer}"
+        )
