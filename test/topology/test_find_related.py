@@ -427,13 +427,6 @@ def test_check_if_vertices_are_reversed(
     )
 
 
-@pytest.fixture()
-def use_topological_editing(qgis_new_project):
-    QgsProject.instance().setTopologicalEditing(True)
-    yield
-    QgsProject.instance().setTopologicalEditing(False)
-
-
 @pytest.mark.usefixtures("qgis_new_project")
 def test_find_related_features_no_results_by_default_if_topological_editing_disabled(
     preset_features_layer_factory: Callable[

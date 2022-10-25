@@ -25,10 +25,18 @@ from qgis.core import (
     QgsFields,
     QgsGeometry,
     QgsMemoryProviderUtils,
+    QgsProject,
     QgsVectorLayer,
     QgsVectorLayerUtils,
     QgsWkbTypes,
 )
+
+
+@pytest.fixture()
+def use_topological_editing(qgis_new_project):
+    QgsProject.instance().setTopologicalEditing(True)
+    yield
+    QgsProject.instance().setTopologicalEditing(False)
 
 
 @pytest.fixture()
