@@ -21,10 +21,12 @@ from typing import List, Optional, Tuple
 
 from qgis.core import (
     QgsFeature,
+    QgsFeatureRequest,
     QgsGeometry,
     QgsLineString,
     QgsPoint,
     QgsPointXY,
+    QgsProject,
     QgsVectorLayer,
     QgsWkbTypes,
 )
@@ -43,11 +45,10 @@ def find_segment_to_reshape(
     layer: QgsVectorLayer,
     feature: QgsFeature,
     trigger_location: QgsPoint,
+    candidate_layers: Optional[List[QgsVectorLayer]] = None,
 ) -> CommonGeometriesResult:
-    pass
-
-    # related = find_related_features()
-    # return get_common_geometries(layer, feature, related, trigger_location)
+    related_features = find_related_features(layer, feature, candidate_layers)
+    return get_common_geometries(layer, feature, related_features, trigger_location)
 
     # To use:
     # common_segment, common_parts, edges = find_segment_to_reshape(...)
@@ -57,13 +58,38 @@ def find_segment_to_reshape(
     # reshape.make_reshape_edits(common_parts, edges, reshape_geom)
 
 
-def find_related_features(
-    layer: QgsVectorLayer, feature: QgsFeature
-) -> List[QgsFeature]:
-    pass
+def _find_topologically_related_project_layers(
+    layer: QgsVectorLayer,
+) -> List[QgsVectorLayer]:
+    if not QgsProject.instance().topologicalEditing():
+        return []
 
-    # tutki onko topologinen muokkaus päällä, jos ei, tyhjä lista
-    # etsi kaikki input-featureen liittyvät kohteet, touches tms?
+    # no advanced config available for topological relations?
+    return [
+        project_layer
+        for project_layer in QgsProject.instance().mapLayers().values()
+        if isinstance(project_layer, QgsVectorLayer)
+    ]
+
+
+def find_related_features(
+    layer: QgsVectorLayer,
+    feature: QgsFeature,
+    candidate_layers: Optional[List[QgsVectorLayer]] = None,
+) -> List[Tuple[QgsVectorLayer, QgsFeature]]:
+    if candidate_layers is None:
+        candidate_layers = _find_topologically_related_project_layers(layer)
+
+    # distance within 0 should work, bbox rect would return excess stuff,
+    # feature must have equal vertex anyway for it be considered
+    request = QgsFeatureRequest()
+    request.setDistanceWithin(feature.geometry(), 0)
+
+    return [
+        (candidate_layer, candidate_feature)
+        for candidate_layer in candidate_layers
+        for candidate_feature in candidate_layer.getFeatures(request)
+    ]
 
 
 def get_common_geometries(

@@ -21,17 +21,7 @@ from typing import Callable, List, Tuple
 
 import pytest
 from pytest_mock import MockerFixture
-from qgis.core import (
-    QgsFeature,
-    QgsFields,
-    QgsGeometry,
-    QgsLineString,
-    QgsMemoryProviderUtils,
-    QgsPoint,
-    QgsVectorLayer,
-    QgsVectorLayerUtils,
-    QgsWkbTypes,
-)
+from qgis.core import QgsFeature, QgsGeometry, QgsLineString, QgsPoint, QgsVectorLayer
 
 from segment_reshape.geometry.reshape import (
     GeometryTransformationError,
@@ -54,34 +44,6 @@ def _assert_layer_geoms(layer: QgsVectorLayer, expected_geom_wkts: List[str]):
     expected_wkts = [_normalize_wkt(wkt) for wkt in expected_geom_wkts]
 
     assert layer_wkts == expected_wkts
-
-
-@pytest.fixture()
-def memory_layer_factory() -> Callable[[str, QgsWkbTypes.Type], QgsVectorLayer]:
-    def _factory(name: str, geometry_type: QgsWkbTypes.Type) -> QgsVectorLayer:
-        return QgsMemoryProviderUtils.createMemoryLayer(
-            name,
-            QgsFields(),
-            geometry_type,
-        )
-
-    return _factory
-
-
-@pytest.fixture()
-def preset_features_layer_factory(
-    memory_layer_factory: Callable[[str, QgsWkbTypes.Type], QgsVectorLayer]
-) -> Callable[[str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]]:
-    def _factory(name: str, wkts: List[str]) -> Tuple[QgsVectorLayer, List[QgsFeature]]:
-        geometries = [QgsGeometry.fromWkt(wkt) for wkt in wkts]
-        layer = memory_layer_factory(name, geometries[0].wkbType())
-        features = [
-            QgsVectorLayerUtils.createFeature(layer, geom) for geom in geometries
-        ]
-        _, added_features = layer.dataProvider().addFeatures(features)
-        return layer, added_features
-
-    return _factory
 
 
 def test_editing_enabled_for_non_editable_layers(
