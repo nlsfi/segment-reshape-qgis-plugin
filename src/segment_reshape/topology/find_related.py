@@ -72,6 +72,15 @@ def _find_topologically_related_project_layers(
     ]
 
 
+def _is_same_feature(
+    layer: QgsVectorLayer,
+    feature: QgsFeature,
+    other_layer: QgsVectorLayer,
+    other_feature: QgsFeature,
+) -> bool:
+    return layer.id() == other_layer.id() and feature.id() == other_feature.id()
+
+
 def find_related_features(
     layer: QgsVectorLayer,
     feature: QgsFeature,
@@ -89,6 +98,12 @@ def find_related_features(
         (candidate_layer, candidate_feature)
         for candidate_layer in candidate_layers
         for candidate_feature in candidate_layer.getFeatures(request)
+        if not _is_same_feature(
+            candidate_layer,
+            candidate_feature,
+            layer,
+            feature,
+        )
     ]
 
 
