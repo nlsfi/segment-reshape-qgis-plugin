@@ -17,12 +17,13 @@
 #  You should have received a copy of the GNU General Public License
 #  along with segment-reshape-qgis-plugin. If not, see <https://www.gnu.org/licenses/>.
 
-from typing import List, Optional, Tuple
+from typing import Callable, List, Optional, Tuple
 
 import pytest
-from qgis.core import QgsFeature, QgsGeometry, QgsPoint, QgsVectorLayer
+from qgis.core import QgsFeature, QgsGeometry, QgsPoint, QgsProject, QgsVectorLayer
 
 from segment_reshape.topology import find_related
+from segment_reshape.topology.find_related import find_related_features
 
 
 @pytest.fixture()
@@ -424,3 +425,143 @@ def test_check_if_vertices_are_reversed(
     assert (
         find_related._check_if_vertices_are_reversed(vertex_indices) is expected_result
     )
+
+
+@pytest.fixture()
+def use_topological_editing(qgis_new_project):
+    QgsProject.instance().setTopologicalEditing(True)
+    yield
+    QgsProject.instance().setTopologicalEditing(False)
+
+
+@pytest.mark.usefixtures("qgis_new_project")
+def test_find_related_features_no_results_by_default_if_topological_editing_disabled(
+    preset_features_layer_factory: Callable[
+        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+    ]
+):
+    source_layer, (source_feature,) = preset_features_layer_factory(
+        "source", ["LINESTRING(0 0, 1 1)"]
+    )
+    l1, _ = preset_features_layer_factory("l1", ["LINESTRING(0 0, 1 1)"])
+    QgsProject.instance().addMapLayers([l1])
+
+    assert not QgsProject.instance().topologicalEditing()
+
+    results = find_related_features(source_layer, source_feature)
+
+    assert results == []
+
+
+@pytest.mark.usefixtures("qgis_new_project", "use_topological_editing")
+def test_find_related_features_results_by_default_from_project_vector_layers(
+    preset_features_layer_factory: Callable[
+        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+    ]
+):
+    source_layer, (source_feature,) = preset_features_layer_factory(
+        "source", ["LINESTRING(0 0, 1 1)"]
+    )
+    l1, _ = preset_features_layer_factory("l1", ["LINESTRING(0 0, 1 1)"])
+    l2, _ = preset_features_layer_factory("l2", ["LINESTRING(0 0, 1 1)"])
+
+    # not added to project, not present in results
+    l3, _ = preset_features_layer_factory("l3", ["LINESTRING(0 0, 1 1)"])
+
+    QgsProject.instance().addMapLayers([l1, l2])
+
+    results = find_related_features(source_layer, source_feature)
+
+    layer_ids = [layer.id() for layer, _ in results]
+
+    assert layer_ids == [l1.id(), l2.id()]
+
+
+@pytest.mark.usefixtures("qgis_new_project")
+def test_find_related_features_uses_custom_list_if_given_if_topological_editing_disabled(
+    preset_features_layer_factory: Callable[
+        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+    ]
+):
+    source_layer, (source_feature,) = preset_features_layer_factory(
+        "source", ["LINESTRING(0 0, 1 1)"]
+    )
+    l1, _ = preset_features_layer_factory("l1", ["LINESTRING(0 0, 1 1)"])
+    l2, _ = preset_features_layer_factory("l2", ["LINESTRING(0 0, 1 1)"])
+
+    # not given, not present in results
+    l3, _ = preset_features_layer_factory("l3", ["LINESTRING(0 0, 1 1)"])
+
+    assert not QgsProject.instance().topologicalEditing()
+
+    results = find_related_features(
+        source_layer, source_feature, candidate_layers=[l1, l2]
+    )
+
+    layer_ids = [layer.id() for layer, _ in results]
+
+    assert layer_ids == [l1.id(), l2.id()]
+
+
+@pytest.mark.usefixtures("qgis_new_project", "use_topological_editing")
+def test_find_related_features_uses_custom_list_if_given(
+    preset_features_layer_factory: Callable[
+        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+    ]
+):
+    source_layer, (source_feature,) = preset_features_layer_factory(
+        "source", ["LINESTRING(0 0, 1 1)"]
+    )
+    l1, _ = preset_features_layer_factory("l1", ["LINESTRING(0 0, 1 1)"])
+    l2, _ = preset_features_layer_factory("l2", ["LINESTRING(0 0, 1 1)"])
+
+    # not given, not present in results
+    l3, _ = preset_features_layer_factory("l3", ["LINESTRING(0 0, 1 1)"])
+
+    results = find_related_features(
+        source_layer, source_feature, candidate_layers=[l1, l2]
+    )
+
+    layer_ids = [layer.id() for layer, _ in results]
+
+    assert layer_ids == [l1.id(), l2.id()]
+
+
+@pytest.mark.usefixtures("qgis_new_project")
+def test_find_related_features_finds_features_touching_the_target(
+    preset_features_layer_factory: Callable[
+        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+    ]
+):
+    source_layer, (source_feature,) = preset_features_layer_factory(
+        "source", ["LINESTRING(0 0, 1 1)"]
+    )
+    l1, _ = preset_features_layer_factory(
+        "l1",
+        [
+            "LINESTRING(1 0, 0 1)",
+            "LINESTRING(3 0, 0 3)",  # not touching
+        ],
+    )
+    l2, _ = preset_features_layer_factory(
+        "l2",
+        [
+            "LINESTRING(1 1, 2 2)",
+            "LINESTRING(0 0, -1 -1)",
+            "LINESTRING(-0.1 -0.1, -1 -1)",  # not touching
+        ],
+    )
+    l3, _ = preset_features_layer_factory(
+        "l3",
+        [
+            "POINT(0.1 0.1)",
+            "POINT(0.9 0.9)",
+            "POINT(1.1 1.1)",  # not touching
+        ],
+    )
+
+    results = find_related_features(
+        source_layer, source_feature, candidate_layers=[l1, l2, l3]
+    )
+
+    assert len(results) == 1 + 2 + 2
