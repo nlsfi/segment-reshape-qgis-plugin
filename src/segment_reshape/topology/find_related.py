@@ -92,27 +92,29 @@ def get_common_geometries(
     main_feature_geom = main_feature.geometry()
 
     # Find geometries having their boundary intersecting trigger location
-    intersecting_geoms: List[QgsGeometry] = []
+    common_segment_candidates: List[QgsGeometry] = []
     for _, feature in related_features_by_layer:
         geom = feature.geometry()
         if (
-            geom.type() == QgsWkbTypes.PolygonGeometry and geom.touches(trigger_geom)
+            geom.type() == QgsWkbTypes.GeometryType.PolygonGeometry
+            and geom.touches(trigger_geom)
         ) or (
-            geom.type() != QgsWkbTypes.PolygonGeometry and geom.intersects(trigger_geom)
+            geom.type() != QgsWkbTypes.GeometryType.PolygonGeometry
+            and geom.intersects(trigger_geom)
         ):
-            intersecting_geoms.append(geom)
+            common_segment_candidates.append(geom)
 
-    # Return just boundary if no intersecting features found
-    if len(intersecting_geoms) == 0:
-        if main_feature_geom.type() == QgsWkbTypes.PointGeometry:
+    # Return just boundary if no candidates found
+    if len(common_segment_candidates) == 0:
+        if main_feature_geom.type() == QgsWkbTypes.GeometryType.PointGeometry:
             return (None, [], [])
 
         vertices = []
-        if main_feature_geom.type() == QgsWkbTypes.PolygonGeometry:
+        if main_feature_geom.type() == QgsWkbTypes.GeometryType.PolygonGeometry:
             # TODO: multigeometries and holes in polygons
             vertices = main_feature_geom.asPolygon()[0]
 
-        if main_feature_geom.type() == QgsWkbTypes.LineGeometry:
+        if main_feature_geom.type() == QgsWkbTypes.GeometryType.LineGeometry:
             # TODO: multigeometries
             vertices = main_feature_geom.asPolyline()
 
@@ -131,7 +133,7 @@ def get_common_geometries(
 
     common_segment = _calculate_common_segment(
         main_feature_geom,
-        intersecting_geoms,
+        common_segment_candidates,
         trigger_geom,
     )
     common_segment_as_geom = QgsGeometry()
@@ -277,7 +279,7 @@ def _get_vertex_indices_of_segment(
 
     polygon_start_point: Optional[QgsPoint] = None
 
-    if geom.type() == QgsWkbTypes.PolygonGeometry:
+    if geom.type() == QgsWkbTypes.GeometryType.PolygonGeometry:
         polygon_start_point = geom.asPolygon()[0]
 
     vertex_indices = []
