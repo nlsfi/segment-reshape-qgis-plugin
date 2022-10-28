@@ -4,7 +4,7 @@
 
 - Create a venv: `python -m venv .venv --system-site-packages`
   - For Windows use `<osgeo>/apps/Python39/python.exe` (this requires some dll+pth patching, see [OSGeo4W issue])
-- Install requirements: `pip install -r requirements.txt--no-deps --only-binary=:all:`
+- Install requirements: `pip install -r requirements.txt --no-deps --only-binary=:all:`
   - `pip-sync requirements.txt` can be used if `pip-tools` is installed
 - Run tests: `pytest`
 

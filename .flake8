@@ -14,7 +14,7 @@ extend-ignore =
 
 per-file-ignores =
     # simplify tests by ignoring some unnecessary rules
-    test/*:E501,INP001,SC200,ANN001,ANN201,ANN202
+    test/*:E501,INP001,SC200,ANN001,ANN201,ANN202,QGS105
 
 ban-relative-imports = true
 spellcheck-targets = names

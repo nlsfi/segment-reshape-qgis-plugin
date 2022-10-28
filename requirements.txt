@@ -76,6 +76,8 @@ flake8-tidy-imports==4.4.1
     # via -r requirements.in
 identify==2.5.6
     # via pre-commit
+importlib-metadata==5.0.0
+    # via qgis-plugin-dev-tools
 iniconfig==1.1.1
     # via pytest
 isort==5.8.0
@@ -91,7 +93,9 @@ mypy-extensions==0.4.3
 nodeenv==1.7.0
     # via pre-commit
 packaging==21.3
-    # via pytest
+    # via
+    #   pytest
+    #   qgis-plugin-dev-tools
 pathspec==0.10.1
     # via black
 pep8-naming==0.11.1
@@ -139,9 +143,15 @@ pytest-qt==3.3.0
 pytest-timeout==1.4.2
     # via -r requirements.in
 python-dotenv==0.21.0
-    # via pytest-dotenv
+    # via
+    #   pytest-dotenv
+    #   qgis-plugin-dev-tools
 pyyaml==6.0
     # via pre-commit
+qgis-plugin-dev-tools==0.3.0
+    # via -r requirements.in
+qgis-plugin-tools==0.2.0
+    # via segment-reshape-qgis-plugin
 six==1.16.0
     # via flake8-print
 toml==0.10.2
@@ -153,6 +163,7 @@ tomli==2.0.1
     #   black
     #   coverage
     #   mypy
+    #   qgis-plugin-dev-tools
 typing-extensions==4.4.0
     # via
     #   black
@@ -160,6 +171,8 @@ typing-extensions==4.4.0
     #   mypy
 virtualenv==20.16.5
     # via pre-commit
+zipp==3.10.0
+    # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools

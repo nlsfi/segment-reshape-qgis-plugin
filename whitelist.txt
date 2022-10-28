@@ -2,8 +2,11 @@ const
 contextvars
 geom
 geoms
+i18n
+iface
 polyline
 qgis
 qgs
+teardown
 utils
 wkb
