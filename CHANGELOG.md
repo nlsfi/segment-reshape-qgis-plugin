@@ -1,5 +1,7 @@
 # CHANGELOG
 
+## Unreleased
+
 ## [0.0.1] - 2022-10-28
 
 - Initial release: API for finding common segments and making reshape edits
