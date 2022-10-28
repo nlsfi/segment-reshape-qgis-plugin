@@ -11,3 +11,10 @@ minversion = "6.0"
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
+
+[tool.qgis_plugin_dev_tools]
+plugin_package_name = "segment_reshape_plugin"
+runtime_requires = [
+    "qgis_plugin_tools",
+    "segment-reshape-qgis-plugin"
+]

@@ -30,5 +30,10 @@ flake8-pytest-style==1.5.0
 flake8-pie==0.14.0
 flake8-no-pep420==1.1.1
 
+# tools
+qgis-plugin-dev-tools==0.3.0
+
+# NOTE: Runtime requirements for QGIS plugin are defined in setup.cfg
+
 # repo itself
 -e file:.

@@ -25,5 +25,10 @@
 				"source.organizeImports": true
 			}
 		},
+		"files.associations": {
+			"*.ts": "xml"
+		},
+		"editor.bracketPairColorization.enabled": true,
+		"editor.guides.bracketPairs": "active",
 	}
 }
