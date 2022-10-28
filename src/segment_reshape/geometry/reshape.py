@@ -44,6 +44,10 @@ class ReshapeCommonPart:
     feature: QgsFeature
     vertex_indices: List[int]
     is_reversed: bool
+    """
+    Indicates if this feature's geometry is digitized
+    in reverse direction to the shared segment.
+    """
 
 
 @dataclass
@@ -52,6 +56,10 @@ class ReshapeEdge:
     feature: QgsFeature
     vertex_index: int
     is_start: bool
+    """
+    Indicates if this feature's vertex is at the
+    start (or end) of the shared segment.
+    """
 
 
 _current_edit_command_layers: ContextVar[List[QgsVectorLayer]] = ContextVar(
@@ -99,6 +107,17 @@ def make_reshape_edits(
     edges: List[ReshapeEdge],
     reshape_geometry: Union[QgsPoint, QgsLineString],
 ) -> None:
+    """
+    Reshape the provided common parts and edges, so that common part shared
+    vertex indices are replaced by `reshape_geometry` and edges are moved
+    to match `reshape_geometry`.
+
+    Edits are made in a single edit command for each layer, and layers are
+    set editable automatically if necessary.
+
+    Raises `GeometryTransformationError` if operation fails.
+    """
+
     # no crs support yet
 
     with _wrap_all_edit_commands():

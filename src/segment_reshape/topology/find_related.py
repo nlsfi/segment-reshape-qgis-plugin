@@ -47,6 +47,14 @@ def find_segment_to_reshape(
     trigger_location: QgsPoint,
     candidate_layers: Optional[List[QgsVectorLayer]] = None,
 ) -> CommonGeometriesResult:
+    """
+    Calculates the line segment between features that share equal
+    sequence of vertices along their edges at the trigger location.
+
+    By default uses project layers if topological editing is enabled, custom
+    list can be provided in `candidate_layers`.
+    """
+
     related_features = find_related_features(layer, feature, candidate_layers)
     return get_common_geometries(layer, feature, related_features, trigger_location)
 
