@@ -1,3 +1,4 @@
+checkable
 const
 contextvars
 geom
@@ -5,8 +6,11 @@ geoms
 i18n
 iface
 polyline
+pos
 qgis
 qgs
+rubberband
+rubberbands
 teardown
 utils
 wkb

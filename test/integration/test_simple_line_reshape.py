@@ -20,14 +20,7 @@
 from typing import Callable, List, Tuple
 
 import pytest
-from qgis.core import (
-    QgsFeature,
-    QgsGeometry,
-    QgsLineString,
-    QgsPoint,
-    QgsProject,
-    QgsVectorLayer,
-)
+from qgis.core import QgsFeature, QgsGeometry, QgsLineString, QgsProject, QgsVectorLayer
 
 from segment_reshape.geometry.reshape import make_reshape_edits
 from segment_reshape.topology.find_related import find_segment_to_reshape
@@ -67,10 +60,11 @@ def test_simple_line_reshape(
 
     QgsProject.instance().addMapLayer(layer)
 
+    # Selected segment is from base feature index 1 to index 2 (LINESTRING(1 1, 2 2))
     segment, common_parts, edges = find_segment_to_reshape(
         layer,
         feature,
-        QgsPoint(1.5, 1.5),
+        (1, 2),
     )
 
     assert segment is not None

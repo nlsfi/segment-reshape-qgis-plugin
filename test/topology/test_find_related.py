@@ -20,7 +20,14 @@
 from typing import Callable, List, Optional, Tuple
 
 import pytest
-from qgis.core import QgsFeature, QgsGeometry, QgsPoint, QgsProject, QgsVectorLayer
+from qgis.core import (
+    QgsFeature,
+    QgsGeometry,
+    QgsLineString,
+    QgsPoint,
+    QgsProject,
+    QgsVectorLayer,
+)
 
 from segment_reshape.topology import find_related
 from segment_reshape.topology.find_related import find_related_features
@@ -45,7 +52,7 @@ def test_get_common_geometries_with_line_shares_border_should_return_common_segm
     layer_2 = QgsVectorLayer("layer2")
 
     line_feature = QgsFeature()
-    # Intersects main feature at: LineStringZ (10 10 0, 5 10 0)
+    # Intersects main feature at: LineStringZ (10 10 0, 5 10 0) -> between vertices 2-3
     line_feature.setGeometry(
         QgsGeometry.fromWkt("LineStringZ (15 10 0, 10 10 0, 5 10 0, 0 15 0)")
     )
@@ -55,7 +62,7 @@ def test_get_common_geometries_with_line_shares_border_should_return_common_segm
         common_segment_results,
         segment_end_point_results,
     ) = find_related.get_common_geometries(
-        layer_1, main_feature, [(layer_2, line_feature)], QgsPoint(7, 10, 0)
+        layer_1, main_feature, [(layer_2, line_feature)], (2, 3)
     )
 
     assert QgsGeometry(segment).isGeosEqual(
@@ -83,9 +90,7 @@ def test_get_common_geometries_with_no_intersecting_features_should_return_polyg
         segment,
         common_segment_results,
         segment_end_point_results,
-    ) = find_related.get_common_geometries(
-        layer_1, main_feature, [], QgsPoint(7, 10, 0)
-    )
+    ) = find_related.get_common_geometries(layer_1, main_feature, [], (2, 3))
 
     assert QgsGeometry(segment).isGeosEqual(
         QgsGeometry.fromWkt(
@@ -111,9 +116,7 @@ def test_get_common_geometries_with_no_intersecting_features_should_return_input
         segment,
         common_segment_results,
         segment_end_point_results,
-    ) = find_related.get_common_geometries(
-        layer_1, line_feature, [], QgsPoint(12, 10, 0)
-    )
+    ) = find_related.get_common_geometries(layer_1, line_feature, [], (0, 1))
 
     assert QgsGeometry(segment).isGeosEqual(QgsGeometry.fromWkt(input_wkt))
     assert len(common_segment_results) == 1
@@ -125,7 +128,7 @@ def test_get_common_geometries_with_no_intersecting_features_should_return_input
     assert common_segment_results[0].is_reversed is False
 
 
-def test_get_common_geometries_line_end_point_at_trigger_location_should_return_common_edges(
+def test_get_common_geometries_line_shares_one_point_with_main_feature(
     main_feature: QgsFeature,
 ):
     layer_1 = QgsVectorLayer("layer1")
@@ -140,22 +143,21 @@ def test_get_common_geometries_line_end_point_at_trigger_location_should_return_
         common_segment_results,
         segment_end_point_results,
     ) = find_related.get_common_geometries(
-        layer_1, main_feature, [(layer_2, line_feature)], QgsPoint(10, 10, 0)
+        layer_1, main_feature, [(layer_2, line_feature)], (0, 1)
     )
 
-    assert segment is None
-    assert len(common_segment_results) == 0
-    assert len(segment_end_point_results) == 2
+    main_feature_geom_as_polyline = QgsLineString(
+        main_feature.geometry().asPolygon()[0]
+    )
+    assert QgsGeometry(segment).isGeosEqual(QgsGeometry(main_feature_geom_as_polyline))
 
-    assert segment_end_point_results[0].layer == layer_1
-    assert segment_end_point_results[0].feature == main_feature
-    assert segment_end_point_results[0].vertex_index == 3
-    assert segment_end_point_results[0].is_start is True
+    assert len(common_segment_results) == 1
+    assert len(segment_end_point_results) == 0
 
-    assert segment_end_point_results[1].layer == layer_2
-    assert segment_end_point_results[1].feature == line_feature
-    assert segment_end_point_results[1].vertex_index == 1
-    assert segment_end_point_results[1].is_start is True
+    assert common_segment_results[0].layer == layer_1
+    assert common_segment_results[0].feature == main_feature
+    assert common_segment_results[0].vertex_indices == [0, 1, 2, 3, 4, 5]
+    assert common_segment_results[0].is_reversed is False
 
 
 def test_get_common_geometries_with_multiple_results_should_return_common_segments_and_edgess(
@@ -165,13 +167,13 @@ def test_get_common_geometries_with_multiple_results_should_return_common_segmen
     layer_2 = QgsVectorLayer("layer2")
 
     line_feature_1 = QgsFeature()
-    # Intersects main feature at: LineStringZ (10 10 0, 5 10 0)
+    # Intersects main feature at: LineStringZ (10 10 0, 5 10 0) -> between vertices 2-3
     line_feature_1.setGeometry(
         QgsGeometry.fromWkt("LineStringZ (15 10 0, 10 10 0, 5 10 0, 0 15 0)")
     )
 
     line_feature_2 = QgsFeature()
-    # Intersects main feature at: PointZ (10 10 0)
+    # Intersects main feature at: PointZ (10 10 0) -> vertex 2
     line_feature_2.setGeometry(QgsGeometry.fromWkt("LineStringZ (15 10 0, 10 10 0)"))
 
     (
@@ -182,7 +184,7 @@ def test_get_common_geometries_with_multiple_results_should_return_common_segmen
         layer_1,
         main_feature,
         [(layer_2, line_feature_1), (layer_2, line_feature_2)],
-        QgsPoint(7, 10, 0),
+        (2, 3),
     )
 
     assert QgsGeometry(segment).isGeosEqual(
@@ -214,10 +216,10 @@ def test_get_common_geometries_with_large_features():
     feature = QgsFeature()
 
     polygon_wkt = "Polygon (("
-    polygon_wkt += ", ".join([f"{x} 0" for x in range(10001)])
-    polygon_wkt += ", ".join([f"1000 {y}" for y in range(10001)])
-    polygon_wkt += ", ".join([f"{x} 1000" for x in range(10001, -1, -1)])
-    polygon_wkt += ", ".join([f"0 {y}" for y in range(10001, -1, -1)])
+    polygon_wkt += ", ".join([f"{x} 0" for x in range(1001)])
+    polygon_wkt += ", ".join([f"1000 {y}" for y in range(1001)])
+    polygon_wkt += ", ".join([f"{x} 1000" for x in range(1001, -1, -1)])
+    polygon_wkt += ", ".join([f"0 {y}" for y in range(1001, -1, -1)])
     polygon_wkt += "))"
 
     feature.setGeometry(QgsGeometry.fromWkt(polygon_wkt))
@@ -225,7 +227,7 @@ def test_get_common_geometries_with_large_features():
 
     intersecting_feature = QgsFeature()
     linestring_wkt = (
-        "LineString (" + ", ".join([f"{x} 0" for x in range(-5000, 15000)]) + ")"
+        "LineString (" + ", ".join([f"{x} 0" for x in range(-500, 1500)]) + ")"
     )
     intersecting_feature.setGeometry(QgsGeometry.fromWkt(linestring_wkt))
     assert not intersecting_feature.geometry().isEmpty()
@@ -235,11 +237,14 @@ def test_get_common_geometries_with_large_features():
         common_segment_results,
         segment_end_point_results,
     ) = find_related.get_common_geometries(
-        layer_1, feature, [(layer_1, intersecting_feature)], QgsPoint(7, 10, 0)
+        layer_1,
+        feature,
+        [(layer_1, intersecting_feature)],
+        (0, 1),
     )
 
     assert segment is not None
-    assert len(common_segment_results) == 1
+    assert len(common_segment_results) == 2
     assert len(segment_end_point_results) == 0
 
 
@@ -332,6 +337,7 @@ def test_calculate_common_segment(
     geoms: List[QgsGeometry], expected_result: QgsGeometry
 ):
     assert len([geom for geom in geoms if geom.isEmpty()]) == 0, "Error in input wkt"
+
     main_geom = QgsGeometry.fromWkt(
         "PolygonZ ((0 0 0, 0 10 0, 3 10 0, 5 10 0, 10 10 0, 10 6 0, 10 2 0, 10 0 0, 0 0 0))"
     )
@@ -339,7 +345,8 @@ def test_calculate_common_segment(
     resulting_line = find_related._calculate_common_segment(
         main_geom,
         geoms,
-        QgsGeometry(QgsPoint(7, 10, 0)),
+        QgsGeometry(QgsPoint(5, 10, 0)),
+        QgsGeometry(QgsPoint(10, 10, 0)),
     )
 
     if resulting_line is None:
@@ -356,8 +363,23 @@ def test_calculate_common_segment(
     [
         (
             QgsGeometry.fromWkt("PolygonZ ((0 0 0, 2 0 0, 2 2 0, 0 2 0, 0 0 0))"),
+            QgsGeometry.fromWkt("LineStringZ (0 0 0, 2 0 0, 2 2 0, 0 2 0, 0 0 0)"),
+            [0, 1, 2, 3, 4],
+        ),
+        (
+            QgsGeometry.fromWkt("PolygonZ ((0 0 0, 2 0 0, 2 2 0, 0 2 0, 0 0 0))"),
+            QgsGeometry.fromWkt("LineStringZ (0 0 0, 0 2 0, 2 2 0, 2 0 0, 0 0 0)"),
+            [4, 3, 2, 1, 0],
+        ),
+        (
+            QgsGeometry.fromWkt("PolygonZ ((0 0 0, 2 0 0, 2 2 0, 0 2 0, 0 0 0))"),
             QgsGeometry.fromWkt("LineStringZ (2 2 0, 0 2 0, 0 0 0, 0 0 0, 2 0 0)"),
             [2, 3, 4, 0, 1],
+        ),
+        (
+            QgsGeometry.fromWkt("PolygonZ ((0 0 0, 2 0 0, 2 2 0, 0 2 0, 0 0 0))"),
+            QgsGeometry.fromWkt("LineStringZ (0 2 0, 2 2 0, 2 0 0, 0 0 0, 0 0 0)"),
+            [3, 2, 1, 0, 4],
         ),
         (
             QgsGeometry.fromWkt("LineStringZ (0 0 0, 2 0 0, 4 0 0, 6 0 0)"),
@@ -372,6 +394,9 @@ def test_calculate_common_segment(
     ],
     ids=[
         "polygon boundary as segment",
+        "polygon boundary as segment, reversed",
+        "polygon boundary as segment, start from middle",
+        "polygon boundary as segment, start from middle, reversed",
         "line segment",
         "line when segment vertex does not match",
     ],

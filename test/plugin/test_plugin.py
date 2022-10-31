@@ -17,17 +17,45 @@
 #  You should have received a copy of the GNU General Public License
 #  along with segment-reshape-qgis-plugin. If not, see <https://www.gnu.org/licenses/>.
 
+from typing import Iterator
 
-from qgis.utils import iface
+import pytest
+from pytest_mock import MockerFixture
+from pytest_qgis import QgisInterface
 
 from segment_reshape_plugin import classFactory
+from segment_reshape_plugin.plugin import SegmentReshapePlugin
 
 
-def test_plugin_loads_and_unloads_without_errors() -> None:
-    plugin = classFactory(iface)
+@pytest.fixture(scope="module")
+def plugin_loaded(qgis_iface: QgisInterface) -> Iterator[SegmentReshapePlugin]:
+    plugin = classFactory(qgis_iface)
     plugin.initGui()
 
-    assert plugin.toolbar is not None
-    assert plugin.segment_reshape_tool_action is not None
+    yield plugin
 
     plugin.unload()
+
+
+def test_plugin_loads_without_errors(plugin_loaded: SegmentReshapePlugin) -> None:
+    assert plugin_loaded.toolbar is not None
+    assert plugin_loaded.segment_reshape_tool_action is not None
+
+
+def test_plugin_action_activates_or_deactivates_reshape_map_tool(
+    plugin_loaded: SegmentReshapePlugin, mocker: MockerFixture
+) -> None:
+    assert plugin_loaded.segment_reshape_tool_action is not None
+    assert not plugin_loaded.segment_reshape_tool.isActive()
+
+    m_tool_deactivate = mocker.patch.object(
+        plugin_loaded.segment_reshape_tool,
+        "deactivate",
+    )
+
+    plugin_loaded.segment_reshape_tool_action.trigger()
+
+    assert plugin_loaded.segment_reshape_tool.isActive()
+
+    plugin_loaded.segment_reshape_tool_action.trigger()
+    m_tool_deactivate.assert_called_once()
