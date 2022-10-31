@@ -44,26 +44,22 @@ CommonGeometriesResult = Tuple[
 def find_segment_to_reshape(
     layer: QgsVectorLayer,
     feature: QgsFeature,
-    trigger_location: QgsPoint,
+    segment_closest_to_trigger_location: Tuple[int, int],
     candidate_layers: Optional[List[QgsVectorLayer]] = None,
 ) -> CommonGeometriesResult:
     """
     Calculates the line segment between features that share equal
-    sequence of vertices along their edges at the trigger location.
+    sequence of vertices along their edges at the segment closest to trigger location.
 
     By default uses project layers if topological editing is enabled, custom
     list can be provided in `candidate_layers`.
     """
 
     related_features = find_related_features(layer, feature, candidate_layers)
-    return get_common_geometries(layer, feature, related_features, trigger_location)
 
-    # To use:
-    # common_segment, common_parts, edges = find_segment_to_reshape(...)
-    # if common_segment is None and len(edges) == 0:
-    #    do nothing (no point at any vertex)
-    # reshape_geom = common_segment or trigger_location
-    # reshape.make_reshape_edits(common_parts, edges, reshape_geom)
+    return get_common_geometries(
+        layer, feature, related_features, segment_closest_to_trigger_location
+    )
 
 
 def _find_topologically_related_project_layers(
@@ -119,26 +115,41 @@ def get_common_geometries(
     main_feature_layer: QgsVectorLayer,
     main_feature: QgsFeature,
     related_features_by_layer: List[Tuple[QgsVectorLayer, QgsFeature]],
-    trigger_location: QgsPoint,
+    main_feature_segment: Tuple[int, int],
 ) -> CommonGeometriesResult:
 
-    trigger_geom = QgsGeometry(trigger_location)
     main_feature_geom = main_feature.geometry()
+    segment_start_point = clone_geometry_safely(
+        main_feature_geom.vertexAt(main_feature_segment[0])
+    )
+    segment_end_point = clone_geometry_safely(
+        main_feature_geom.vertexAt(main_feature_segment[1])
+    )
 
-    # Find geometries having their boundary intersecting trigger location
+    # Find geometries having their boundary intersecting main feature segment
     common_segment_candidates: List[QgsGeometry] = []
     for _, feature in related_features_by_layer:
         geom = feature.geometry()
         if (
             geom.type() == QgsWkbTypes.GeometryType.PolygonGeometry
-            and geom.touches(trigger_geom)
+            and (geom.touches(segment_start_point) and geom.touches(segment_end_point))
         ) or (
             geom.type() != QgsWkbTypes.GeometryType.PolygonGeometry
-            and geom.intersects(trigger_geom)
+            and (
+                geom.intersects(segment_start_point)
+                and geom.intersects(segment_end_point)
+            )
         ):
             common_segment_candidates.append(geom)
 
-    # Return just boundary if no candidates found
+    segments = []
+    end_points = []
+
+    common_segment_as_geom = QgsGeometry()
+    start_point = QgsPoint()
+    end_point = QgsPoint()
+
+    # Return just boundary as common segment if no candidates found
     if len(common_segment_candidates) == 0:
         if main_feature_geom.type() == QgsWkbTypes.GeometryType.PointGeometry:
             return (None, [], [])
@@ -152,6 +163,8 @@ def get_common_geometries(
             # TODO: multigeometries
             vertices = main_feature_geom.asPolyline()
 
+        # TODO: How to handle common segments along the boundary
+        # (outside triggered segment)? Return just the boundary for now
         return (
             QgsLineString(vertices),
             [
@@ -165,22 +178,18 @@ def get_common_geometries(
             [],
         )
 
-    common_segment = _calculate_common_segment(
-        main_feature_geom,
-        common_segment_candidates,
-        trigger_geom,
-    )
-    common_segment_as_geom = QgsGeometry()
-    start_point = QgsPoint()
-    end_point = QgsPoint()
+    else:
+        common_segment = _calculate_common_segment(
+            main_feature_geom,
+            common_segment_candidates,
+            segment_start_point,
+            segment_end_point,
+        )
 
-    if common_segment is not None:
-        common_segment_as_geom = clone_geometry_safely(common_segment)
-        start_point = common_segment.startPoint()
-        end_point = common_segment.endPoint()
-
-    segments = []
-    end_points = []
+        if common_segment is not None:
+            common_segment_as_geom = clone_geometry_safely(common_segment)
+            start_point = common_segment.startPoint()
+            end_point = common_segment.endPoint()
 
     if common_segment is not None:
         vertex_indices = _get_vertex_indices_of_segment(
@@ -197,7 +206,7 @@ def get_common_geometries(
         )
     else:
         dist, vertex = main_feature_geom.closestVertexWithContext(
-            trigger_geom.asPoint()
+            segment_start_point.asPoint()
         )
 
         if dist == 0:
@@ -225,14 +234,10 @@ def get_common_geometries(
         # Other features which may have vertex at segment end points
         # or at trigger point location (in case common segment was not found)
         else:
-            possible_end_points: List[Tuple[QgsPointXY, bool]] = []
-            if common_segment is None:
-                possible_end_points.append((trigger_geom.asPoint(), True))
-            else:
-                possible_end_points.append((QgsPointXY(start_point), True))
-                possible_end_points.append((QgsPointXY(end_point), False))
-
-            for point, is_start in possible_end_points:
+            for point, is_start in [
+                (QgsPointXY(start_point), True),
+                (QgsPointXY(end_point), False),
+            ]:
                 dist, vertex = geom.closestVertexWithContext(point)
 
                 if dist == 0:
@@ -252,7 +257,8 @@ def get_common_geometries(
 def _calculate_common_segment(
     main_geom: QgsGeometry,
     geoms: List[QgsGeometry],
-    trigger_geom: QgsGeometry,
+    start_point: QgsGeometry,
+    end_point: QgsGeometry,
 ) -> Optional[QgsLineString]:
     """
     Calculated shared segment of main geom and input geoms. Segment is shared when
@@ -288,7 +294,9 @@ def _calculate_common_segment(
     # Find out which intersection is at trigger location
     for candidate_line in common_segment_candidates:
         candidate_geom = clone_geometry_safely(candidate_line)
-        if candidate_geom.intersects(trigger_geom):
+        if candidate_geom.intersects(start_point) and candidate_geom.intersects(
+            end_point
+        ):
             if _segment_matches_geom(main_geom, candidate_geom):
                 return QgsLineString(candidate_geom.asPolyline())
             else:
@@ -314,7 +322,7 @@ def _get_vertex_indices_of_segment(
     polygon_start_point: Optional[QgsPoint] = None
 
     if geom.type() == QgsWkbTypes.GeometryType.PolygonGeometry:
-        polygon_start_point = geom.asPolygon()[0]
+        polygon_start_point = geom.asPolygon()[0][0]
 
     vertex_indices = []
     for i, point in enumerate(segment_geom.asPolyline()):
@@ -326,6 +334,7 @@ def _get_vertex_indices_of_segment(
         vertex_indices.append(vertex)
         if i > 0 and abs(vertex_indices[i - 1] - vertex_indices[i]) != 1:
             if polygon_start_point is not None:
+                previous_point = geom.vertexAt(vertex_indices[i - 1])
                 if abs(vertex_indices[i - 1] - vertex_indices[i]) == 0:
                     vertex_indices[i] = 0
                     continue
@@ -333,8 +342,41 @@ def _get_vertex_indices_of_segment(
                     point.x() == polygon_start_point.x()
                     and point.y() == polygon_start_point.y()
                 ):
+                    vertex_indices[i] = 0
+                    continue
+                elif (
+                    previous_point.x() == polygon_start_point.x()
+                    and previous_point.y() == polygon_start_point.y()
+                ):
+                    vertex_indices[i - 1] = 0
                     continue
             raise ValueError("Segment did not match original geometry")
+
+    # Handle possible duplicates (applies to polygons only)
+    if (
+        geom.type() == QgsWkbTypes.GeometryType.PolygonGeometry
+        and vertex_indices.count(0) > 1
+    ):
+
+        # Find first instance of duplicate index
+        i = vertex_indices.index(0)
+
+        max_index = max(vertex_indices)
+
+        if i == 0:
+            vertex_indices[-1] = max_index
+
+        is_reversed = _check_if_vertices_are_reversed(vertex_indices)
+        if is_reversed is True:
+            # Replace second instance
+            vertex_indices = (
+                vertex_indices[: i + 1] + [max_index + 1] + vertex_indices[i + 2 :]
+            )
+        else:
+            # Replace fist instance
+            vertex_indices = (
+                vertex_indices[:i] + [max_index + 1] + vertex_indices[i + 1 :]
+            )
 
     return vertex_indices
 

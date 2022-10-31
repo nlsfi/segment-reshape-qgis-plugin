@@ -31,6 +31,7 @@ from qgis_plugin_tools.tools.resources import resources_path
 
 import segment_reshape
 import segment_reshape_plugin
+from segment_reshape.map_tool.segment_reshape_tool import SegmentReshapeTool
 
 LOGGER = logging.getLogger(__name__)
 
@@ -49,6 +50,7 @@ class SegmentReshapePlugin(QWidget):
             QCoreApplication.installTranslator(self.translator)
 
         self.toolbar: Optional[QToolBar] = None
+        self.segment_reshape_tool = SegmentReshapeTool(iface.mapCanvas())
         self.segment_reshape_tool_action: Optional[QAction] = None
 
     def initGui(self) -> None:  # noqa N802 (qgis naming)
@@ -71,7 +73,10 @@ class SegmentReshapePlugin(QWidget):
             self.tr("Reshape common segment"),
             iface.mainWindow(),
         )
-        action.triggered.connect(self._start_segment_reshape)
+        action.setCheckable(True)
+        action.triggered.connect(self._segment_reshape_action_triggered)
+
+        self.segment_reshape_tool.setAction(action)
         toolbar.addAction(action)
         self.segment_reshape_tool_action = action
 
@@ -86,5 +91,10 @@ class SegmentReshapePlugin(QWidget):
         self._teardown_loggers()
         self._teardown_loggers = lambda: None
 
-    def _start_segment_reshape(self) -> None:
-        LOGGER.info("TODO")
+    def _segment_reshape_action_triggered(self, checked: bool) -> None:
+        if checked is True:
+            if iface.mapCanvas().mapTool() != self.segment_reshape_tool:
+                iface.mapCanvas().setMapTool(self.segment_reshape_tool)
+            self.segment_reshape_tool.activate()
+        else:
+            self.segment_reshape_tool.deactivate()
