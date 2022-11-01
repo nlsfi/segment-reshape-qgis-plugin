@@ -24,9 +24,9 @@ for line in changelog_file.read_text(encoding="utf-8").splitlines():
 if len(results) == 0:
     raise ValueError("no changes found")
 
-if results[0] == '':
+if results[0] == "":
     results = results[1:]
-if results[-1] == '':
+if results[-1] == "":
     results = results[:-1]
 
-sys.stdout.write('\n'.join(results) + '\n')
+sys.stdout.write("\n".join(results) + "\n")
