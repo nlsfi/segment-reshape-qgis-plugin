@@ -216,14 +216,15 @@ def test_get_common_geometries_with_large_features():
     feature = QgsFeature()
 
     polygon_wkt = "Polygon (("
-    polygon_wkt += ", ".join([f"{x} 0" for x in range(1001)])
-    polygon_wkt += ", ".join([f"1000 {y}" for y in range(1001)])
-    polygon_wkt += ", ".join([f"{x} 1000" for x in range(1001, -1, -1)])
-    polygon_wkt += ", ".join([f"0 {y}" for y in range(1001, -1, -1)])
+    polygon_wkt += ", ".join([f"{x} 0" for x in range(1001)]) + ", "
+    polygon_wkt += ", ".join([f"1000 {y}" for y in range(1001)]) + ", "
+    polygon_wkt += ", ".join([f"{x} 1000" for x in range(1000, -1, -1)]) + ", "
+    polygon_wkt += ", ".join([f"0 {y}" for y in range(1000, -1, -1)])
     polygon_wkt += "))"
 
     feature.setGeometry(QgsGeometry.fromWkt(polygon_wkt))
     assert not feature.geometry().isEmpty()
+    assert feature.geometry().isGeosValid()
 
     intersecting_feature = QgsFeature()
     linestring_wkt = (
@@ -231,6 +232,7 @@ def test_get_common_geometries_with_large_features():
     )
     intersecting_feature.setGeometry(QgsGeometry.fromWkt(linestring_wkt))
     assert not intersecting_feature.geometry().isEmpty()
+    assert intersecting_feature.geometry().isGeosValid()
 
     (
         segment,
