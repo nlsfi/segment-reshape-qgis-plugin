@@ -62,6 +62,8 @@ class SegmentReshapeTool(QgsMapToolEdit):
 
         self.deactivated.connect(self._change_to_pick_location_mode)
 
+        self._identify_tool = QgsMapToolIdentify(canvas)
+
     def _change_to_pick_location_mode(self) -> None:
         self.pick_location_mode = True
         self.reshape_mode = False
@@ -159,7 +161,7 @@ class SegmentReshapeTool(QgsMapToolEdit):
             MsgBar.warning(tr("No active layer found"), tr("Activate a layer first"))
             return None, None
 
-        identify_results = QgsMapToolIdentify(self.canvas()).identify(
+        identify_results = self._identify_tool.identify(
             geometry=QgsGeometry.fromPointXY(location),
             mode=QgsMapToolIdentify.ActiveLayer,
             layerType=QgsMapToolIdentify.VectorLayer,
