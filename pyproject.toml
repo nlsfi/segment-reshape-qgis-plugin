@@ -18,3 +18,4 @@ runtime_requires = [
     "qgis_plugin_tools",
     "segment-reshape-qgis-plugin"
 ]
+version_number_source = "distribution"
