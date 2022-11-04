@@ -398,15 +398,13 @@ def test_calculate_common_segment_for_huge_polygon_coordinate_count_is_fast_enou
             "LineStringZ (15 10 0, 10 10 0, 5 10 0, 0 15 0)",
             (1, 2),
             ["LineStringZ (10 10 0, 5 10 0)"],
-            "LineStringZ (10 10 0, 5 10 0)",
+            "LineString (10 10, 5 10)",
         ),
         (
             "LineStringZ (15 10 2, 10 10 2, 5 10 2, 0 15 2)",
             (1, 2),
             ["LineStringZ (10 10 0, 5 10 0)"],
-            # investigate why this way (0 and 2, not only 0 or only 2)
-            # new line will be digitized without zs anyway
-            "LineStringZ (10 10 0, 5 10 2)",
+            "LineString (10 10, 5 10)",
         ),
     ],
     ids=[
@@ -435,6 +433,13 @@ def test_calculate_common_segment_does_not_consider_z_dimension(
     )
 
     assert segment is not None
+
+    # only test for 2d equality, since for different z case windows
+    # returns (10 10 0, 5 10 2) and linux returns (10 10 1, 5 10 1)
+    # investigate and possibly decide what should happen with z coords,
+    # maybe always use the source geometry z's?
+    segment.dropZValue()
+
     _assert_geom_equals_wkt(segment, expected_segment_wkt)
 
 
