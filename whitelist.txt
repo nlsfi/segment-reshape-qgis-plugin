@@ -5,6 +5,7 @@ geom
 geoms
 i18n
 iface
+num
 polyline
 pos
 qgis
