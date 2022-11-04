@@ -177,11 +177,13 @@ def _reshape_geometry(
                 )
 
     else:
-        # cleanup last in case a full polygon is redrawn
+        # handle case when a full polygon is redrawn
         if (
             original.type() == QgsWkbTypes.GeometryType.PolygonGeometry
             and reshape_geometry.endPoint() == reshape_geometry.startPoint()
+            and vertex_indices[0] == vertex_indices[-1]
         ):
+            vertex_indices = vertex_indices[:-1]
             reshape_geometry = QgsLineString(list(reshape_geometry.vertices())[:-1])
 
         # add vertices before the first replaced vertex

@@ -965,10 +965,22 @@ def test_polygon_fully_replaced_by_reshape(
 
     make_reshape_edits(
         [
-            ReshapeCommonPart(layer1, features1[0], [0, 1, 2, 3], False),
+            # input can either be from zero and loop back to zero
+            ReshapeCommonPart(layer1, features1[0], [0, 1, 2, 3, 0], False),
         ],
         [],
         QgsLineString([(1, 1), (1, 2), (2, 2), (2, 1), (1, 1)]),
     )
 
     _assert_layer_geoms(layer1, ["POLYGON((1 1, 1 2, 2 2, 2 1, 1 1))"])
+
+    make_reshape_edits(
+        [
+            # or from last, second and end to last
+            ReshapeCommonPart(layer1, features1[0], [4, 1, 2, 3, 4], False),
+        ],
+        [],
+        QgsLineString([(2, 2), (2, 3), (3, 3), (3, 2), (2, 2)]),
+    )
+
+    _assert_layer_geoms(layer1, ["POLYGON((2 2, 2 3, 3 3, 3 2, 2 2))"])
