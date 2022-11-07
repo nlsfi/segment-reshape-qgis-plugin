@@ -137,17 +137,18 @@ def _get_containing_component(
 def _get_line_component_for_part_and_ring(
     geom: QgsGeometry, part_index: int, ring_index: int
 ) -> QgsGeometry:
-    for i, part in enumerate(geom.constParts()):
-        if i == part_index:
-            if isinstance(part, QgsPolygon):
-                if ring_index == 0:
-                    return QgsGeometry(part.exteriorRing().clone())
-                else:
-                    return QgsGeometry(part.interiorRing(ring_index - 1).clone())
-            else:
-                return QgsGeometry(part.clone())
-
-    raise ValueError(f"could not extract part {part_index} ring {ring_index} of {geom}")
+    try:
+        part = list(geom.constParts())[part_index]
+        if not isinstance(part, QgsPolygon):
+            return QgsGeometry(part.clone())
+        elif ring_index == 0:
+            return QgsGeometry(part.exteriorRing().clone())
+        else:
+            return QgsGeometry(part.interiorRing(ring_index - 1).clone())
+    except IndexError:
+        raise ValueError(
+            f"could not extract part {part_index} ring {ring_index} of {geom}"
+        )
 
 
 def _split_at_position(geom: QgsGeometry, position: QgsPoint) -> QgsGeometry:
