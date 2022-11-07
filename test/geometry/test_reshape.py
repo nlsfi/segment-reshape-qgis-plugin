@@ -984,3 +984,24 @@ def test_polygon_fully_replaced_by_reshape(
     )
 
     _assert_layer_geoms(layer1, ["POLYGON((2 2, 2 3, 3 3, 3 2, 2 2))"])
+
+
+def test_full_polygon_partially_replaced_by_reshape_auto_closed(
+    preset_features_layer_factory: Callable[
+        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+    ],
+):
+    layer1, features1 = preset_features_layer_factory(
+        "l1",
+        ["POLYGON((0 0, 0 1, 1 1, 1 0, 0 0))"],
+    )
+
+    make_reshape_edits(
+        [
+            ReshapeCommonPart(layer1, features1[0], [4, 1, 2, 3, 4], False),
+        ],
+        [],
+        QgsLineString([(1, 1), (1, 2), (2, 2), (2, 1)]),
+    )
+
+    _assert_layer_geoms(layer1, ["POLYGON((1 1, 1 2, 2 2, 2 1, 1 1))"])
