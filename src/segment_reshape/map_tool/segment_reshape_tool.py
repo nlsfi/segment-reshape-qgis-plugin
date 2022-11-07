@@ -27,6 +27,7 @@ from qgis.gui import (
     QgsMapToolEdit,
     QgsMapToolIdentify,
     QgsRubberBand,
+    QgsSnapIndicator,
 )
 from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtGui import QColor
@@ -63,6 +64,8 @@ class SegmentReshapeTool(QgsMapToolEdit):
         self.deactivated.connect(self._change_to_pick_location_mode)
 
         self._identify_tool = QgsMapToolIdentify(canvas)
+        self.snap_indicator = QgsSnapIndicator(canvas)
+        self.snapping_utils = canvas.snappingUtils()
 
     def _change_to_pick_location_mode(self) -> None:
         self.pick_location_mode = True
@@ -74,6 +77,8 @@ class SegmentReshapeTool(QgsMapToolEdit):
 
         self.find_segment_results = (None, [], [])
 
+        self.snap_indicator.setVisible(False)
+
     def _change_to_reshape_mode(self) -> None:
         self.pick_location_mode = False
         self.reshape_mode = True
@@ -83,6 +88,10 @@ class SegmentReshapeTool(QgsMapToolEdit):
         self._handle_mouse_click_event(location, mouse_event.button())
 
     def canvasMoveEvent(self, mouse_event: QgsMapMouseEvent) -> None:  # noqa: N802
+        if self.reshape_mode:
+            snap_match = self.snapping_utils.snapToMap(mouse_event.pos())
+            self.snap_indicator.setMatch(snap_match)
+
         location = self.toMapCoordinates(mouse_event.pos())
         self._handle_mouse_move_event(location)
 
@@ -120,6 +129,9 @@ class SegmentReshapeTool(QgsMapToolEdit):
                 )
 
         elif mouse_button == Qt.LeftButton and self.reshape_mode is True:
+            if self.snap_indicator.isVisible():
+                location = self.snap_indicator.match().point()
+
             self.new_segment_rubber_band.addPoint(location, True)
             self.temporary_new_segment_rubber_band.reset()
             self.temporary_new_segment_rubber_band.addPoint(location, True)
@@ -148,6 +160,8 @@ class SegmentReshapeTool(QgsMapToolEdit):
 
     def _handle_mouse_move_event(self, location: QgsPointXY) -> None:
         if self.reshape_mode is True:
+            if self.snap_indicator.isVisible():
+                location = self.snap_indicator.match().point()
             self.temporary_new_segment_rubber_band.removeLastPoint(0, True)
             self.temporary_new_segment_rubber_band.addPoint(location, True)
 
