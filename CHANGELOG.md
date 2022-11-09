@@ -1,5 +1,7 @@
 # CHANGELOG
 
+## Unreleased
+
 ## [0.0.2] - 2022-11-09
 
 - Feat: Implement a QGIS plugin with a simple toolbar
