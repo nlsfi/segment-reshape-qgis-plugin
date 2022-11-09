@@ -4,7 +4,7 @@ QGIS plugin with a map tool to reshape a continuous segment topogically.
 
 ## Plugin
 
-TBA
+`Segment reshape tool` plugin is available from the QGIS plugin repository. It provides a simple toolbar with one action. Action will activate a segment reshape map tool, with which a common segment portion can be clicked and a new segment can be digitized. After digitizing the features are edited to match the new common segment.
 
 ## Library
 
@@ -27,6 +27,10 @@ Return values are:
 #### Editing geometries partially
 
 `segment_reshape.geometry.reshape.make_reshape_edits` reshapes the provided common parts and edges, so that common part shared vertex indices are replaced and edges are moved to match the reshaped geometry. Output of `find_segment_to_reshape` (common parts & edges) can be used as input for this function.
+
+#### Map tool
+
+Map tool is found in `segment_reshape.map_tool.segment_reshape_tool.SegmentReshapeTool`, it can be subclassed or used as is in custom plugins.
 
 ## Development of segment-reshape-qgis-plugin
 
