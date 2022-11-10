@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Fix: Fix missing toolbar icon by including resource files in setuptools build
+
 ## [0.0.2] - 2022-11-09
 
 - Feat: Implement a QGIS plugin with a simple toolbar
