@@ -78,7 +78,6 @@ class SegmentReshapeTool(QgsMapToolEdit):
         self.temporary_new_segment_rubber_band.reset()
 
         self.find_segment_results = (None, [], [])
-
         self.snap_indicator.setVisible(False)
 
     def _change_to_reshape_mode(self) -> None:
@@ -207,18 +206,15 @@ class SegmentReshapeTool(QgsMapToolEdit):
         self, location: QgsPointXY
     ) -> Tuple[Optional[QgsLineString], Optional[QgsVectorLayer]]:
         LOGGER.info("Calculating common segment")
-
         active_layer = iface.activeLayer()
         if active_layer is None:
             MsgBar.warning(tr("No active layer found"), tr("Activate a layer first"))
             return None, None
-
         identify_results = self._identify_tool.identify(
             geometry=QgsGeometry.fromPointXY(location),
             mode=QgsMapToolIdentify.ActiveLayer,
             layerType=QgsMapToolIdentify.VectorLayer,
         )
-
         try:
             feature = [result.mFeature for result in identify_results][0]
         except IndexError:
@@ -226,15 +222,12 @@ class SegmentReshapeTool(QgsMapToolEdit):
                 tr("Did not find any active layer feature at mouse location")
             )
             return None, None
-
         (
             *_,
             next_vertex_index,
             _,
         ) = feature.geometry().closestSegmentWithContext(location)
-
         self.find_segment_results = find_related.find_segment_to_reshape(
             active_layer, feature, (next_vertex_index, next_vertex_index - 1)
         )
-
         return self.find_segment_results[0], active_layer
