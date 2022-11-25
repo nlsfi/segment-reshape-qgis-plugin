@@ -54,7 +54,7 @@ class SegmentReshapeTool(QgsMapToolEdit):
         self.new_segment_rubber_band = QgsRubberBand(canvas)
         self.new_segment_rubber_band.setStrokeColor(QColor(200, 50, 50))
         self.new_segment_rubber_band.setWidth(3)
-        self.added_points = [QgsPointXY]
+        self.added_points = []  # type: ignore
 
         self.temporary_new_segment_rubber_band = QgsRubberBand(canvas)
         self.temporary_new_segment_rubber_band.setStrokeColor(QColor(200, 50, 50))
@@ -74,7 +74,7 @@ class SegmentReshapeTool(QgsMapToolEdit):
 
         self.old_segment_rubber_band.reset()
         self.new_segment_rubber_band.reset()
-        self.added_points = [QgsPointXY]
+        self.added_points = []
         self.temporary_new_segment_rubber_band.reset()
 
         self.find_segment_results = (None, [], [])
@@ -170,7 +170,7 @@ class SegmentReshapeTool(QgsMapToolEdit):
         if self.reshape_mode is True:
             if key == Qt.Key_Escape or len(self.added_points) == 0:
                 self.new_segment_rubber_band.reset()
-                self.added_points = [QgsPointXY]
+                self.added_points = []
                 self.temporary_new_segment_rubber_band.reset()
                 self._change_to_pick_location_mode()
                 return
