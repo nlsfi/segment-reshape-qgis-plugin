@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Unreleased
+- Feat: Add support for key commands (backspace and esc)
 
 ## [0.0.3] - 2022-11-17
 
