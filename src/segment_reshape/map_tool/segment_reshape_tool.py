@@ -54,7 +54,6 @@ class SegmentReshapeTool(QgsMapToolEdit):
         self.new_segment_rubber_band = QgsRubberBand(canvas)
         self.new_segment_rubber_band.setStrokeColor(QColor(200, 50, 50))
         self.new_segment_rubber_band.setWidth(3)
-        self.added_points = []  # type: ignore
 
         self.temporary_new_segment_rubber_band = QgsRubberBand(canvas)
         self.temporary_new_segment_rubber_band.setStrokeColor(QColor(200, 50, 50))
@@ -74,7 +73,6 @@ class SegmentReshapeTool(QgsMapToolEdit):
 
         self.old_segment_rubber_band.reset()
         self.new_segment_rubber_band.reset()
-        self.added_points = []
         self.temporary_new_segment_rubber_band.reset()
 
         self.find_segment_results = (None, [], [])
@@ -140,7 +138,6 @@ class SegmentReshapeTool(QgsMapToolEdit):
                 location = self.snap_indicator.match().point()
 
             self.new_segment_rubber_band.addPoint(location, True)
-            self.added_points.append(location)
             self.temporary_new_segment_rubber_band.reset()
             self.temporary_new_segment_rubber_band.addPoint(location, True)
 
@@ -148,7 +145,10 @@ class SegmentReshapeTool(QgsMapToolEdit):
             new_geometry = self.new_segment_rubber_band.asGeometry()
 
             # Reshape cancelled
-            if new_geometry.isEmpty() or len(self.added_points) <= 1:
+            if (
+                new_geometry.isEmpty()
+                or self.new_segment_rubber_band.numberOfVertices() <= 1
+            ):
                 self._change_to_pick_location_mode()
                 return
 
@@ -168,18 +168,23 @@ class SegmentReshapeTool(QgsMapToolEdit):
 
     def _handle_key_event(self, key: Qt.Key) -> None:
         if self.reshape_mode is True:
-            if key == Qt.Key_Escape or len(self.added_points) == 0:
+            if key == Qt.Key_Escape or (
+                key == Qt.Key_Backspace
+                and self.new_segment_rubber_band.numberOfVertices() == 0
+            ):
                 self.new_segment_rubber_band.reset()
-                self.added_points = []
                 self.temporary_new_segment_rubber_band.reset()
                 self._change_to_pick_location_mode()
                 return
             elif key in (Qt.Key_Backspace, Qt.Key_Delete):
-                if len(self.added_points) > 1:
+                if self.new_segment_rubber_band.numberOfVertices() > 1:
                     self.new_segment_rubber_band.removeLastPoint(0, True)
-                    self.added_points.pop(-1)
                 self.temporary_new_segment_rubber_band.reset()
-                self.temporary_new_segment_rubber_band.addPoint(self.added_points[-1])
+                self.temporary_new_segment_rubber_band.addPoint(
+                    self.new_segment_rubber_band.getPoint(
+                        0, self.new_segment_rubber_band.numberOfVertices() - 1
+                    )
+                )
 
     def _handle_mouse_move_event(self, location: QgsPointXY) -> None:
         if self.reshape_mode is True:
