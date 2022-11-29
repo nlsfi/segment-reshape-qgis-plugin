@@ -18,6 +18,7 @@
 #  along with segment-reshape-qgis-plugin. If not, see <https://www.gnu.org/licenses/>.
 
 import logging
+from enum import Enum
 from typing import Optional, Tuple
 
 from qgis.core import QgsGeometry, QgsLineString, QgsPointXY, QgsVectorLayer
@@ -41,11 +42,15 @@ from segment_reshape.topology import find_related
 LOGGER = logging.getLogger(__name__)
 
 
+class ToolMode(Enum):
+    PICK_SEGMENT = "pick_segment"
+    RESHAPE = "reshape"
+
+
 class SegmentReshapeTool(QgsMapToolEdit):
     def __init__(self, canvas: QgsMapCanvas) -> None:
         super().__init__(canvas)
-        self.pick_location_mode = True
-        self.reshape_mode = False
+        self.tool_mode = ToolMode.PICK_SEGMENT
 
         self.old_segment_rubber_band = QgsRubberBand(canvas)
         self.old_segment_rubber_band.setStrokeColor(QColor(10, 20, 150))
@@ -70,8 +75,7 @@ class SegmentReshapeTool(QgsMapToolEdit):
         self.snapping_utils = canvas.snappingUtils()
 
     def _change_to_pick_location_mode(self) -> None:
-        self.pick_location_mode = True
-        self.reshape_mode = False
+        self.tool_mode = ToolMode.PICK_SEGMENT
 
         self.old_segment_rubber_band.reset()
         self.new_segment_rubber_band.reset()
@@ -82,8 +86,7 @@ class SegmentReshapeTool(QgsMapToolEdit):
         self.snap_indicator.setVisible(False)
 
     def _change_to_reshape_mode(self) -> None:
-        self.pick_location_mode = False
-        self.reshape_mode = True
+        self.tool_mode = ToolMode.RESHAPE
 
     def keyPressEvent(self, key_event: QKeyEvent) -> None:  # noqa: N802
         # If not ignored, event drains through to super
@@ -96,7 +99,7 @@ class SegmentReshapeTool(QgsMapToolEdit):
         self._handle_mouse_click_event(location, mouse_event.button())
 
     def canvasMoveEvent(self, mouse_event: QgsMapMouseEvent) -> None:  # noqa: N802
-        if self.reshape_mode:
+        if self.tool_mode == ToolMode.RESHAPE:
             snap_match = self.snapping_utils.snapToMap(mouse_event.pos())
             self.snap_indicator.setMatch(snap_match)
 
@@ -107,7 +110,7 @@ class SegmentReshapeTool(QgsMapToolEdit):
     def _handle_mouse_click_event(
         self, location: QgsPointXY, mouse_button: Qt.MouseButton
     ) -> None:
-        if mouse_button == Qt.LeftButton and self.pick_location_mode is True:
+        if mouse_button == Qt.LeftButton and self.tool_mode == ToolMode.PICK_SEGMENT:
             common_segment, layer = self._find_common_segment(location)
 
             # No active layer or active layer feature found
@@ -136,8 +139,7 @@ class SegmentReshapeTool(QgsMapToolEdit):
                 self.temporary_new_segment_rubber_band.addPoint(
                     QgsPointXY(self.start_point), True
                 )
-
-        elif mouse_button == Qt.LeftButton and self.reshape_mode is True:
+        elif mouse_button == Qt.LeftButton and self.tool_mode == ToolMode.RESHAPE:
             if self.snap_indicator.isVisible():
                 location = self.snap_indicator.match().point()
                 self.cursor_point = location
@@ -145,8 +147,7 @@ class SegmentReshapeTool(QgsMapToolEdit):
             self.new_segment_rubber_band.addPoint(location, True)
             self.temporary_new_segment_rubber_band.reset()
             self.temporary_new_segment_rubber_band.addPoint(location, True)
-
-        elif mouse_button == Qt.RightButton and self.reshape_mode is True:
+        elif mouse_button == Qt.RightButton and self.tool_mode == ToolMode.RESHAPE:
             new_geometry = self.new_segment_rubber_band.asGeometry()
 
             # Reshape cancelled
@@ -172,14 +173,14 @@ class SegmentReshapeTool(QgsMapToolEdit):
             )
 
     def _handle_key_event(self, key: Qt.Key) -> None:
-        if self.reshape_mode is True:
+        if self.tool_mode == ToolMode.RESHAPE:
             if key == Qt.Key_Escape:
                 self._abort_reshape()
             elif key in (Qt.Key_Backspace, Qt.Key_Delete):
                 self._undo_last_vertex()
 
     def _handle_mouse_move_event(self, location: QgsPointXY) -> None:
-        if self.reshape_mode is True:
+        if self.tool_mode == ToolMode.RESHAPE:
             if self.snap_indicator.isVisible():
                 location = self.snap_indicator.match().point()
                 self.cursor_point = location
