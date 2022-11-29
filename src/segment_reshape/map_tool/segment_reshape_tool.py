@@ -101,67 +101,77 @@ class SegmentReshapeTool(QgsMapToolEdit):
     def _handle_mouse_click_event(
         self, location: QgsPointXY, mouse_button: Qt.MouseButton
     ) -> None:
-        if mouse_button == Qt.LeftButton and self.tool_mode == ToolMode.PICK_SEGMENT:
-            common_segment, layer = self._find_common_segment(location)
+        if self.tool_mode == ToolMode.PICK_SEGMENT and mouse_button == Qt.LeftButton:
+            self._handle_pick_segment_left_click(location)
+        elif self.tool_mode == ToolMode.RESHAPE:
+            if mouse_button == Qt.LeftButton:
+                self._handle_reshape_left_click(location)
+            elif mouse_button == Qt.RightButton:
+                self._handle_reshape_right_click()
 
-            # No active layer or active layer feature found
-            if layer is None:
-                return
+    def _handle_pick_segment_left_click(self, location: QgsPointXY) -> None:
+        common_segment, layer = self._find_common_segment(location)
+
+        # No active layer or active layer feature found
+        if layer is None:
+            return
 
             # No common segment found
-            if common_segment is None:
-                MsgBar.info(
-                    tr("No common segment found at location"),
-                    tr(
-                        "Features are not topologically connected "
-                        "or a single vertex was clicked"
-                    ),
-                )
-            else:
-                MsgBar.info(
-                    tr("Common segment found, changing to reshape mode"),
-                    success=True,
-                )
-                self.start_point = common_segment.startPoint()
-                self._change_to_reshape_mode()
-                self.old_segment_rubber_band.setToGeometry(
-                    QgsGeometry(common_segment), layer
-                )
-                self.temporary_new_segment_rubber_band.addPoint(
-                    QgsPointXY(self.start_point), True
-                )
-        elif mouse_button == Qt.LeftButton and self.tool_mode == ToolMode.RESHAPE:
-            if self.snap_indicator.isVisible():
-                location = self.snap_indicator.match().point()
-                self.cursor_point = location
-
-            self.new_segment_rubber_band.addPoint(location, True)
-            self.temporary_new_segment_rubber_band.reset()
-            self.temporary_new_segment_rubber_band.addPoint(location, True)
-        elif mouse_button == Qt.RightButton and self.tool_mode == ToolMode.RESHAPE:
-            new_geometry = self.new_segment_rubber_band.asGeometry()
-
-            # Reshape cancelled
-            if (
-                new_geometry.isEmpty()
-                or self.new_segment_rubber_band.numberOfVertices() <= 1
-            ):
-                self._change_to_pick_location_mode()
-                return
-
-            reshape.make_reshape_edits(
-                self.find_segment_results.common_parts,
-                self.find_segment_results.edges,
-                QgsLineString(list(new_geometry.vertices())),
-            )
-
-            self._change_to_pick_location_mode()
-            self.canvas().refresh()
-
+        if common_segment is None:
             MsgBar.info(
-                tr("Features reshaped"),
+                tr("No common segment found at location"),
+                tr(
+                    "Features are not topologically connected "
+                    "or a single vertex was clicked"
+                ),
+            )
+        else:
+            MsgBar.info(
+                tr("Common segment found, changing to reshape mode"),
                 success=True,
             )
+            self.start_point = common_segment.startPoint()
+            self._change_to_reshape_mode()
+            self.old_segment_rubber_band.setToGeometry(
+                QgsGeometry(common_segment), layer
+            )
+            self.temporary_new_segment_rubber_band.addPoint(
+                QgsPointXY(self.start_point), True
+            )
+
+    def _handle_reshape_left_click(self, location: QgsPointXY) -> None:
+        if self.snap_indicator.isVisible():
+            location = self.snap_indicator.match().point()
+            self.cursor_point = location
+
+        self.new_segment_rubber_band.addPoint(location, True)
+        self.temporary_new_segment_rubber_band.reset()
+        self.temporary_new_segment_rubber_band.addPoint(location, True)
+
+    def _handle_reshape_right_click(self) -> None:
+        new_geometry = self.new_segment_rubber_band.asGeometry()
+
+        # Reshape cancelled
+        if (
+            new_geometry.isEmpty()
+            or self.new_segment_rubber_band.numberOfVertices() <= 1
+        ):
+            self._change_to_pick_location_mode()
+            return
+
+        reshape.make_reshape_edits(
+            self.find_segment_results.common_parts,
+            self.find_segment_results.edges,
+            QgsLineString(list(new_geometry.vertices())),
+        )
+
+        self._change_to_pick_location_mode()
+        self.canvas().refresh()
+
+        MsgBar.info(
+            tr("Features reshaped"),
+            success=True,
+        )
 
     def canvasMoveEvent(self, mouse_event: QgsMapMouseEvent) -> None:  # noqa: N802
         if self.tool_mode == ToolMode.RESHAPE:
