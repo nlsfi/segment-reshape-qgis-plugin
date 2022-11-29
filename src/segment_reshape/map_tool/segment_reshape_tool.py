@@ -98,15 +98,6 @@ class SegmentReshapeTool(QgsMapToolEdit):
         self.cursor_point = location
         self._handle_mouse_click_event(location, mouse_event.button())
 
-    def canvasMoveEvent(self, mouse_event: QgsMapMouseEvent) -> None:  # noqa: N802
-        if self.tool_mode == ToolMode.RESHAPE:
-            snap_match = self.snapping_utils.snapToMap(mouse_event.pos())
-            self.snap_indicator.setMatch(snap_match)
-
-        location = self.toMapCoordinates(mouse_event.pos())
-        self.cursor_point = location
-        self._handle_mouse_move_event(location)
-
     def _handle_mouse_click_event(
         self, location: QgsPointXY, mouse_button: Qt.MouseButton
     ) -> None:
@@ -171,6 +162,15 @@ class SegmentReshapeTool(QgsMapToolEdit):
                 tr("Features reshaped"),
                 success=True,
             )
+
+    def canvasMoveEvent(self, mouse_event: QgsMapMouseEvent) -> None:  # noqa: N802
+        if self.tool_mode == ToolMode.RESHAPE:
+            snap_match = self.snapping_utils.snapToMap(mouse_event.pos())
+            self.snap_indicator.setMatch(snap_match)
+
+        location = self.toMapCoordinates(mouse_event.pos())
+        self.cursor_point = location
+        self._handle_mouse_move_event(location)
 
     def _handle_key_event(self, key: Qt.Key) -> None:
         if self.tool_mode == ToolMode.RESHAPE:
