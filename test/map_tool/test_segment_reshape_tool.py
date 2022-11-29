@@ -35,7 +35,7 @@ from qgis.gui import QgsMapToolIdentify
 from qgis.PyQt.QtCore import Qt
 
 from segment_reshape.geometry import reshape
-from segment_reshape.map_tool.segment_reshape_tool import SegmentReshapeTool
+from segment_reshape.map_tool.segment_reshape_tool import SegmentReshapeTool, ToolMode
 
 MOUSE_LOCATION = QgsPointXY(1.5, 1.5)
 
@@ -70,13 +70,11 @@ def test_change_to_pick_location_mode_resets_rubberbands(map_tool: SegmentReshap
     map_tool.temporary_new_segment_rubber_band.setToGeometry(
         QgsGeometry.fromWkt("LINESTRING(0 0, 1 1)")
     )
-    map_tool.pick_location_mode = False
-    map_tool.reshape_mode = True
+    map_tool.tool_mode = ToolMode.RESHAPE
 
     map_tool._change_to_pick_location_mode()
 
-    assert map_tool.pick_location_mode is True
-    assert map_tool.reshape_mode is False
+    assert map_tool.tool_mode == ToolMode.PICK_SEGMENT
     assert map_tool.old_segment_rubber_band.asGeometry().isEmpty()
     assert map_tool.new_segment_rubber_band.asGeometry().isEmpty()
     assert map_tool.temporary_new_segment_rubber_band.asGeometry().isEmpty()
@@ -92,13 +90,11 @@ def test_pressing_esc_in_reshape_mode_aborts_reshape(map_tool: SegmentReshapeToo
     map_tool.temporary_new_segment_rubber_band.setToGeometry(
         QgsGeometry.fromWkt("LINESTRING(0 0, 1 1, 2 2, 3 3, 4 4, 5 5)")
     )
-    map_tool.pick_location_mode = False
-    map_tool.reshape_mode = True
+    map_tool.tool_mode = ToolMode.RESHAPE
 
     map_tool._handle_key_event(Qt.Key_Escape)
 
-    assert map_tool.pick_location_mode is True
-    assert map_tool.reshape_mode is False
+    assert map_tool.tool_mode == ToolMode.PICK_SEGMENT
     assert map_tool.old_segment_rubber_band.asGeometry().isEmpty()
     assert map_tool.new_segment_rubber_band.asGeometry().isEmpty()
     assert map_tool.temporary_new_segment_rubber_band.asGeometry().isEmpty()
@@ -110,8 +106,7 @@ def test_pressing_esc_in_reshape_mode_with_empty_rubberbands_aborts_reshape(
     map_tool.old_segment_rubber_band.reset()
     map_tool.new_segment_rubber_band.reset()
     map_tool.temporary_new_segment_rubber_band.reset()
-    map_tool.pick_location_mode = False
-    map_tool.reshape_mode = True
+    map_tool.tool_mode = ToolMode.RESHAPE
 
     map_tool._handle_key_event(Qt.Key_Escape)
 
@@ -123,13 +118,11 @@ def test_pressing_esc_in_reshape_mode_with_empty_rubberbands_aborts_reshape(
 def test_change_to_change_to_reshape_mode_toggles_pick_mode_off(
     map_tool: SegmentReshapeTool,
 ):
-    map_tool.pick_location_mode = True
-    map_tool.reshape_mode = False
+    map_tool.tool_mode = ToolMode.PICK_SEGMENT
 
     map_tool._change_to_reshape_mode()
 
-    assert map_tool.pick_location_mode is False
-    assert map_tool.reshape_mode is True
+    assert map_tool.tool_mode == ToolMode.RESHAPE
 
 
 def test_left_mouse_click_in_pick_mode_does_nothing_if_active_layer_or_feature_not_found(
@@ -145,8 +138,8 @@ def test_left_mouse_click_in_pick_mode_does_nothing_if_active_layer_or_feature_n
     map_tool._handle_mouse_click_event(MOUSE_LOCATION, Qt.LeftButton)
 
     m_find_common_segment.assert_called_once()
-    assert map_tool.pick_location_mode is True
-    assert map_tool.reshape_mode is False
+
+    assert map_tool.tool_mode == ToolMode.PICK_SEGMENT
 
 
 def test_left_mouse_click_in_pick_mode_does_nothing_if_common_segment_not_found(
@@ -165,8 +158,8 @@ def test_left_mouse_click_in_pick_mode_does_nothing_if_common_segment_not_found(
     map_tool._handle_mouse_click_event(MOUSE_LOCATION, Qt.LeftButton)
 
     m_find_common_segment.assert_called_once()
-    assert map_tool.pick_location_mode is True
-    assert map_tool.reshape_mode is False
+
+    assert map_tool.tool_mode == ToolMode.PICK_SEGMENT
 
 
 def test_left_mouse_click_in_pick_mode_starts_reshape_mode_if_common_segment_is_found(
@@ -187,8 +180,8 @@ def test_left_mouse_click_in_pick_mode_starts_reshape_mode_if_common_segment_is_
     map_tool._handle_mouse_click_event(MOUSE_LOCATION, Qt.LeftButton)
 
     m_find_common_segment.assert_called_once()
-    assert map_tool.pick_location_mode is False
-    assert map_tool.reshape_mode is True
+
+    assert map_tool.tool_mode == ToolMode.RESHAPE
 
     assert map_tool.old_segment_rubber_band.asGeometry().isGeosEqual(
         QgsGeometry.fromWkt("LineString (0 0, 1 1)")
@@ -229,13 +222,11 @@ def test_pressing_backspace_in_reshape_mode_removes_point_from_rubberband(
     map_tool.temporary_new_segment_rubber_band.setToGeometry(
         QgsGeometry.fromWkt("LINESTRING(0 0, 1 1, 2 2, 3 3, 4 4, 5 5)")
     )
-    map_tool.pick_location_mode = False
-    map_tool.reshape_mode = True
+    map_tool.tool_mode = ToolMode.RESHAPE
 
     map_tool._handle_key_event(Qt.Key_Backspace)
 
-    assert map_tool.pick_location_mode is False
-    assert map_tool.reshape_mode is True
+    assert map_tool.tool_mode == ToolMode.RESHAPE
     assert (
         map_tool.new_segment_rubber_band.asGeometry().asWkt()
         == "LineString (0 0, 1 1, 2 2, 3 3, 4 4)"
@@ -250,8 +241,7 @@ def test_pressing_backspace_twice_in_reshape_mode_removes_points_from_rubberband
     map_tool.new_segment_rubber_band.setToGeometry(
         QgsGeometry.fromWkt("LINESTRING(0 0, 1 1, 2 2, 3 3, 4 4, 5 5)")
     )
-    map_tool.pick_location_mode = False
-    map_tool.reshape_mode = True
+    map_tool.tool_mode = ToolMode.RESHAPE
 
     map_tool._handle_key_event(Qt.Key_Backspace)
     map_tool._handle_key_event(Qt.Key_Backspace)
@@ -267,8 +257,7 @@ def test_pressing_backspace_in_reshape_mode_with_only_one_point_in_rubberband(
 ):
     map_tool.temporary_new_segment_rubber_band.reset()
     map_tool.new_segment_rubber_band.setToGeometry(QgsGeometry.fromWkt("POINT(0 0)"))
-    map_tool.pick_location_mode = False
-    map_tool.reshape_mode = True
+    map_tool.tool_mode = ToolMode.RESHAPE
 
     map_tool._handle_key_event(Qt.Key_Backspace)
 
@@ -281,8 +270,7 @@ def test_pressing_backspace_in_reshape_mode_with_no_points_in_rubberband(
 ):
     map_tool.new_segment_rubber_band.reset()
     map_tool.temporary_new_segment_rubber_band.reset()
-    map_tool.pick_location_mode = False
-    map_tool.reshape_mode = True
+    map_tool.tool_mode = ToolMode.RESHAPE
 
     map_tool._handle_key_event(Qt.Key_Backspace)
 
