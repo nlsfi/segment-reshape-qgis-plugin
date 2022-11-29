@@ -33,6 +33,7 @@ from qgis.gui import (
 from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtGui import QColor, QKeyEvent
 from qgis.utils import iface
+from qgis_plugin_tools.tools.decorations import log_if_fails
 from qgis_plugin_tools.tools.i18n import tr
 from qgis_plugin_tools.tools.messages import MsgBar
 
@@ -98,6 +99,7 @@ class SegmentReshapeTool(QgsMapToolEdit):
         self.cursor_point = location
         self._handle_mouse_click_event(location, mouse_event.button())
 
+    @log_if_fails
     def _handle_mouse_click_event(
         self, location: QgsPointXY, mouse_button: Qt.MouseButton
     ) -> None:
