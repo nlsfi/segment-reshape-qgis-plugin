@@ -251,7 +251,7 @@ class SegmentReshapeTool(QgsMapToolEdit):
         ) = feature.geometry().closestSegmentWithContext(location)
 
         self.find_segment_results = find_related.find_segment_to_reshape(
-            active_layer, feature, (next_vertex_index, next_vertex_index - 1)
+            active_layer, feature, (next_vertex_index - 1, next_vertex_index)
         )
 
         return self.find_segment_results.segment, active_layer
