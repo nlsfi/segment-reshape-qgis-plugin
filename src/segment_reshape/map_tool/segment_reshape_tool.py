@@ -64,7 +64,7 @@ class SegmentReshapeTool(QgsMapToolEdit):
         self.temporary_new_segment_rubber_band.setStrokeColor(QColor(200, 50, 50))
         self.temporary_new_segment_rubber_band.setLineStyle(Qt.PenStyle.DotLine)
 
-        self.find_segment_results: find_related.CommonGeometriesResult = (None, [], [])
+        self.find_segment_results = find_related.CommonGeometriesResult(None, [], [])
         self.start_point = QgsPointXY()
         self.cursor_point = QgsPointXY()
 
@@ -81,7 +81,7 @@ class SegmentReshapeTool(QgsMapToolEdit):
         self.new_segment_rubber_band.reset()
         self.temporary_new_segment_rubber_band.reset()
 
-        self.find_segment_results = (None, [], [])
+        self.find_segment_results = find_related.CommonGeometriesResult(None, [], [])
 
         self.snap_indicator.setVisible(False)
 
@@ -158,10 +158,10 @@ class SegmentReshapeTool(QgsMapToolEdit):
                 self._change_to_pick_location_mode()
                 return
 
-            _, common_parts, edges = self.find_segment_results
-
             reshape.make_reshape_edits(
-                common_parts, edges, QgsLineString(list(new_geometry.vertices()))
+                self.find_segment_results.common_parts,
+                self.find_segment_results.edges,
+                QgsLineString(list(new_geometry.vertices())),
             )
 
             self._change_to_pick_location_mode()
@@ -245,4 +245,4 @@ class SegmentReshapeTool(QgsMapToolEdit):
             active_layer, feature, (next_vertex_index, next_vertex_index - 1)
         )
 
-        return self.find_segment_results[0], active_layer
+        return self.find_segment_results.segment, active_layer

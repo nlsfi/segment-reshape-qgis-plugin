@@ -17,7 +17,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with segment-reshape-qgis-plugin. If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Iterable, Iterator, List, Optional, Tuple, cast
+from typing import Iterable, Iterator, List, NamedTuple, Optional, Tuple, cast
 
 from qgis.core import (
     QgsFeature,
@@ -35,11 +35,11 @@ from qgis.core import (
 
 from segment_reshape.geometry.reshape import ReshapeCommonPart, ReshapeEdge
 
-CommonGeometriesResult = Tuple[
-    Optional[QgsLineString],
-    List[ReshapeCommonPart],
-    List[ReshapeEdge],
-]
+
+class CommonGeometriesResult(NamedTuple):
+    segment: Optional[QgsLineString]
+    common_parts: List[ReshapeCommonPart]
+    edges: List[ReshapeEdge]
 
 
 def find_segment_to_reshape(
@@ -328,4 +328,4 @@ def get_common_geometries(
                 )
             )
 
-    return segment, common_parts, edges
+    return CommonGeometriesResult(segment, common_parts, edges)
