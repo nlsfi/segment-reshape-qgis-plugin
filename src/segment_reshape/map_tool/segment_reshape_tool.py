@@ -237,9 +237,8 @@ class SegmentReshapeTool(QgsMapToolEdit):
             layerType=QgsMapToolIdentify.VectorLayer,
         )
 
-        try:
-            feature = [result.mFeature for result in identify_results][0]
-        except IndexError:
+        feature = next((result.mFeature for result in identify_results), None)
+        if not feature:
             MsgBar.warning(
                 tr("Did not find any active layer feature at mouse location")
             )
