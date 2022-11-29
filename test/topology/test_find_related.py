@@ -549,17 +549,16 @@ def test_calculate_common_segment_line_broken_by_points_as_edges(
     assert not edge_2.is_start
 
 
-@pytest.mark.xfail(reason="TODO: cross or touch at non-vertex should not break segment")
 @pytest.mark.parametrize(
     argnames=("trigger_wkt", "trigger_indices", "other_wkts", "expected_segment_wkt"),
     argvalues=[
-        (  # see TODO for get_common_geometries difference, cross at non-vertex
+        (
             "LINESTRING(0 0, 1 1, 2 2, 3 3, 4 4, 5 5, 6 6, 7 7)",
             (3, 4),
             ["LINESTRING(1 0, 0 1)"],
             "LINESTRING(0 0, 1 1, 2 2, 3 3, 4 4, 5 5, 6 6, 7 7)",
         ),
-        (  # see TODO for get_common_geometries difference, touch at non-vertex
+        (
             "LINESTRING(0 0, 1 1, 2 2, 3 3, 4 4, 5 5, 6 6, 7 7)",
             (3, 4),
             ["LINESTRING(1 0, 1.5 1.5, 2 0, 5 0, 5.5 5.5, 6 0)"],
@@ -595,11 +594,10 @@ def test_calculate_common_segment_line_having_related_feature_not_at_vertex_trig
     _assert_geom_equals_wkt(segment, expected_segment_wkt)
 
 
-@pytest.mark.xfail(reason="TODO: partial linear intersection should not break segment")
 @pytest.mark.parametrize(
     argnames=("trigger_wkt", "trigger_indices", "other_wkts", "expected_segment_wkt"),
     argvalues=[
-        (  # see TODO for get_common_geometries difference, partial linear intersection
+        (
             "LINESTRING(0 0, 1 1, 2 2)",
             (0, 1),
             ["LINESTRING(1.5 1.5, 2 2, 3 3)"],
@@ -634,17 +632,16 @@ def test_calculate_common_segment_line_having_related_feature_linear_intersect_t
     _assert_geom_equals_wkt(segment, expected_segment_wkt)
 
 
-@pytest.mark.xfail(reason="TODO: broken continuous ring should be rejoined at boundary")
 @pytest.mark.parametrize(
     argnames=("trigger_wkt", "trigger_indices", "other_wkts", "expected_segment_wkt"),
     argvalues=[
-        (  # see TODO for get_common_geometries mergeLines
+        (
             "POLYGON((0 0, 0 1, 1 1, 1 0, 0 0))",
             (0, 1),
             ["POLYGON((1 0, 1 1, 2 1, 2 0, 1 0))"],  # 1 0, 1 1 shared, removed
             "LINESTRING(1 0, 0 0, 0 1, 1 1)",
         ),
-        (  # see TODO for get_common_geometries mergeLines
+        (
             "POLYGON((0 0, 0 1, 1 1, 1 0, 0 0))",
             (0, 1),
             ["POLYGON((2 0, 1 1, 2 1, 2 0))"],  # 1 1 touched, split
@@ -680,17 +677,16 @@ def test_calculate_common_segment_polygon_ring_boundary_crossed(
     _assert_geom_equals_wkt(segment, expected_segment_wkt)
 
 
-@pytest.mark.xfail(reason="TODO: trigger should be contained as same sequence")
 @pytest.mark.parametrize(
     argnames=("trigger_wkt", "trigger_indices", "other_wkts", "expected_segment_wkt"),
     argvalues=[
-        (  # see TODO for get_common_geometries intersection, partial linear intersection
+        (
             "LINESTRING(0 0, 1 1, 2 2)",
             (0, 1),
             ["LINESTRING(0 0, 2 2)"],
-            "LINESTRING(0 0, 2 2)",
+            "LINESTRING(0 0, 1 1, 2 2)",
         ),
-        (  # see TODO for get_common_geometries intersection, partial linear intersection
+        (
             "LINESTRING(0 0, 1 1)",
             (0, 1),
             ["LINESTRING(0 0, 0.5 0.5, 1 1)"],

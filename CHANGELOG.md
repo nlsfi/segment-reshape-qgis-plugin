@@ -3,6 +3,8 @@
 ## Unreleased
 
 - Feat: Add support for key commands (backspace and esc) in vertex editing
+- Fix: In cases where segment was split from the middle the start and end parts of the line is correctly merged back together.
+- Fix: Geometry comparison was fixed so that only common vertices between geometries are taken into account. Before edges were split if an edge crossed other edge also from non vertex point.
 
 ## [0.0.3] - 2022-11-17
 
