@@ -30,7 +30,7 @@ from qgis.gui import (
     QgsSnapIndicator,
 )
 from qgis.PyQt.QtCore import Qt
-from qgis.PyQt.QtGui import QColor
+from qgis.PyQt.QtGui import QColor, QKeyEvent
 from qgis.utils import iface
 from qgis_plugin_tools.tools.i18n import tr
 from qgis_plugin_tools.tools.messages import MsgBar
@@ -60,6 +60,8 @@ class SegmentReshapeTool(QgsMapToolEdit):
         self.temporary_new_segment_rubber_band.setLineStyle(Qt.PenStyle.DotLine)
 
         self.find_segment_results: find_related.CommonGeometriesResult = (None, [], [])
+        self.start_point = QgsPointXY()
+        self.cursor_point = QgsPointXY()
 
         self.deactivated.connect(self._change_to_pick_location_mode)
 
@@ -83,8 +85,14 @@ class SegmentReshapeTool(QgsMapToolEdit):
         self.pick_location_mode = False
         self.reshape_mode = True
 
+    def keyPressEvent(self, key_event: QKeyEvent) -> None:  # noqa: N802
+        # If not ignored, event drains through to super
+        key_event.ignore()
+        self._handle_key_event(key_event.key())
+
     def canvasReleaseEvent(self, mouse_event: QgsMapMouseEvent) -> None:  # noqa: N802
         location = self.toMapCoordinates(mouse_event.pos())
+        self.cursor_point = location
         self._handle_mouse_click_event(location, mouse_event.button())
 
     def canvasMoveEvent(self, mouse_event: QgsMapMouseEvent) -> None:  # noqa: N802
@@ -93,6 +101,7 @@ class SegmentReshapeTool(QgsMapToolEdit):
             self.snap_indicator.setMatch(snap_match)
 
         location = self.toMapCoordinates(mouse_event.pos())
+        self.cursor_point = location
         self._handle_mouse_move_event(location)
 
     def _handle_mouse_click_event(
@@ -119,18 +128,19 @@ class SegmentReshapeTool(QgsMapToolEdit):
                     tr("Common segment found, changing to reshape mode"),
                     success=True,
                 )
-                start_point = common_segment.startPoint()
+                self.start_point = common_segment.startPoint()
                 self._change_to_reshape_mode()
                 self.old_segment_rubber_band.setToGeometry(
                     QgsGeometry(common_segment), layer
                 )
                 self.temporary_new_segment_rubber_band.addPoint(
-                    QgsPointXY(start_point), True
+                    QgsPointXY(self.start_point), True
                 )
 
         elif mouse_button == Qt.LeftButton and self.reshape_mode is True:
             if self.snap_indicator.isVisible():
                 location = self.snap_indicator.match().point()
+                self.cursor_point = location
 
             self.new_segment_rubber_band.addPoint(location, True)
             self.temporary_new_segment_rubber_band.reset()
@@ -140,7 +150,10 @@ class SegmentReshapeTool(QgsMapToolEdit):
             new_geometry = self.new_segment_rubber_band.asGeometry()
 
             # Reshape cancelled
-            if new_geometry.isEmpty():
+            if (
+                new_geometry.isEmpty()
+                or self.new_segment_rubber_band.numberOfVertices() <= 1
+            ):
                 self._change_to_pick_location_mode()
                 return
 
@@ -158,12 +171,44 @@ class SegmentReshapeTool(QgsMapToolEdit):
                 success=True,
             )
 
+    def _handle_key_event(self, key: Qt.Key) -> None:
+        if self.reshape_mode is True:
+            if key == Qt.Key_Escape:
+                self._abort_reshape()
+            elif key in (Qt.Key_Backspace, Qt.Key_Delete):
+                self._undo_last_vertex()
+
     def _handle_mouse_move_event(self, location: QgsPointXY) -> None:
         if self.reshape_mode is True:
             if self.snap_indicator.isVisible():
                 location = self.snap_indicator.match().point()
+                self.cursor_point = location
             self.temporary_new_segment_rubber_band.removeLastPoint(0, True)
             self.temporary_new_segment_rubber_band.addPoint(location, True)
+
+    def _abort_reshape(self) -> None:
+        self.new_segment_rubber_band.reset()
+        self.temporary_new_segment_rubber_band.reset()
+        self._change_to_pick_location_mode()
+
+        return
+
+    def _undo_last_vertex(self) -> None:
+        self.temporary_new_segment_rubber_band.reset()
+        if self.new_segment_rubber_band.numberOfVertices() > 1:
+            self.new_segment_rubber_band.removeLastPoint(0, True)
+            self.temporary_new_segment_rubber_band.addPoint(
+                self.new_segment_rubber_band.getPoint(
+                    0, self.new_segment_rubber_band.numberOfVertices() - 1
+                )
+            )
+            self.temporary_new_segment_rubber_band.addPoint(self.cursor_point)
+        else:
+            self.new_segment_rubber_band.reset()
+            self.temporary_new_segment_rubber_band.addPoint(
+                QgsPointXY(self.start_point), True
+            )
+            self.temporary_new_segment_rubber_band.addPoint(self.cursor_point)
 
     def _find_common_segment(
         self, location: QgsPointXY

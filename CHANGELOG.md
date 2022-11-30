@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Feat: Add support for key commands (backspace and esc) in vertex editing
+
 ## [0.0.3] - 2022-11-17
 
 - Fix: Fix missing toolbar icon by including resource files in setuptools build
