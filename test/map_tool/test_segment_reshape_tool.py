@@ -262,24 +262,23 @@ def test_pressing_backspace_twice_in_reshape_mode_removes_points_from_rubberband
     )
 
 
-def test_pressing_backspace_in_reshape_mode_with_only_start_point_in_rubberband(
+def test_pressing_backspace_in_reshape_mode_with_only_one_point_in_rubberband(
     map_tool: SegmentReshapeTool,
 ):
-    map_tool.new_segment_rubber_band.setToGeometry(
-        QgsGeometry.fromWkt("LINESTRING(0 0)")
-    )
+    map_tool.temporary_new_segment_rubber_band.reset()
+    map_tool.new_segment_rubber_band.setToGeometry(QgsGeometry.fromWkt("POINT(1 1)"))
     map_tool.pick_location_mode = False
     map_tool.reshape_mode = True
 
     map_tool._handle_key_event(Qt.Key_Backspace)
 
-    assert map_tool.new_segment_rubber_band.asGeometry().asWkt() == "LineString (0 0)"
+    assert map_tool.new_segment_rubber_band.asGeometry().isEmpty()
+    assert not map_tool.temporary_new_segment_rubber_band.asGeometry().isEmpty()
 
 
-def test_pressing_backspace_in_reshape_mode_with_empty_rubberbands_aborts_reshape(
+def test_pressing_backspace_in_reshape_mode_with_no_points_in_rubberband(
     map_tool: SegmentReshapeTool,
 ):
-    map_tool.old_segment_rubber_band.reset()
     map_tool.new_segment_rubber_band.reset()
     map_tool.temporary_new_segment_rubber_band.reset()
     map_tool.pick_location_mode = False
@@ -287,11 +286,8 @@ def test_pressing_backspace_in_reshape_mode_with_empty_rubberbands_aborts_reshap
 
     map_tool._handle_key_event(Qt.Key_Backspace)
 
-    assert map_tool.pick_location_mode is True
-    assert map_tool.reshape_mode is False
-    assert map_tool.old_segment_rubber_band.asGeometry().isEmpty()
     assert map_tool.new_segment_rubber_band.asGeometry().isEmpty()
-    assert map_tool.temporary_new_segment_rubber_band.asGeometry().isEmpty()
+    assert not map_tool.temporary_new_segment_rubber_band.asGeometry().isEmpty()
 
 
 def test_right_mouse_click_in_reshape_mode_changes_only_to_pick_mode_if_edited_geometry_is_empty(
