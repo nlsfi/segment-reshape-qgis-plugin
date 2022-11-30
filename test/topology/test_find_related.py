@@ -59,7 +59,7 @@ def _assert_geom_equals_wkt(geom: QgsGeometry, wkt: str) -> None:
         ),
         (
             "MULTILINESTRING((0 0, 1 1), (2 2, 3 3))",
-            (1, 2),
+            (2, 3),
             "LINESTRING(2 2, 3 3)",
         ),
         (
