@@ -343,6 +343,9 @@ def test_calculate_common_segment_for_multiple_lines_results_in_multiple_edges(
         assert edge.is_start == expected_start
 
 
+@pytest.mark.xfail(
+    reason="Performance has always been slow. There was an error in the test earlier."
+)
 @pytest.mark.parametrize(
     argnames=("count", "allowed_duration_ms"),
     argvalues=[
@@ -384,11 +387,11 @@ def test_calculate_common_segment_for_huge_polygon_coordinate_count_is_fast_enou
         [(other_layer, other_feature)],
         (count // 2, count // 2 - 1),
     )
-    end = perf_counter()
+    execution_time_s = perf_counter() - start
 
     assert (
-        end - start
-    ) / 1000 < allowed_duration_ms, "common geometry code was not fast enough"
+        execution_time_s < allowed_duration_ms / 1000
+    ), "common geometry code was not fast enough"
 
 
 @pytest.mark.parametrize(
