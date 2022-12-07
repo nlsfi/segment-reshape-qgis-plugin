@@ -18,8 +18,9 @@
 #  along with segment-reshape-qgis-plugin. If not, see <https://www.gnu.org/licenses/>.
 
 import logging
+from contextlib import contextmanager
 from enum import Enum
-from typing import Optional, Tuple
+from typing import Iterator, Optional, Tuple, cast
 
 from qgis.core import QgsGeometry, QgsLineString, QgsPointXY, QgsVectorLayer
 from qgis.gui import (
@@ -41,6 +42,20 @@ from segment_reshape.geometry import reshape
 from segment_reshape.topology import find_related
 
 LOGGER = logging.getLogger(__name__)
+
+
+@contextmanager
+def _optional_identify_tool(
+    tool: Optional[QgsMapToolIdentify] = None,
+) -> Iterator[QgsMapToolIdentify]:
+    if tool:
+        yield tool
+    else:
+        tool = QgsMapToolIdentify(iface.mapCanvas())
+        try:
+            yield tool
+        finally:
+            tool.deleteLater()
 
 
 class ToolMode(Enum):
@@ -233,18 +248,39 @@ class SegmentReshapeTool(QgsMapToolEdit):
             MsgBar.warning(tr("No active layer found"), tr("Activate a layer first"))
             return None, None
 
-        identify_results = self._identify_tool.identify(
-            geometry=QgsGeometry.fromPointXY(location),
-            mode=QgsMapToolIdentify.ActiveLayer,
-            layerType=QgsMapToolIdentify.VectorLayer,
+        results = SegmentReshapeTool.find_common_segment_at_location(
+            location, self._identify_tool
         )
 
-        feature = next((result.mFeature for result in identify_results), None)
-        if not feature:
+        if results is None:
             MsgBar.warning(
                 tr("Did not find any active layer feature at mouse location")
             )
             return None, None
+
+        self.find_segment_results = results
+
+        return self.find_segment_results.segment, active_layer
+
+    @staticmethod
+    def find_common_segment_at_location(
+        location: QgsPointXY, identify_tool: Optional[QgsMapToolIdentify] = None
+    ) -> Optional[find_related.CommonGeometriesResult]:
+        with _optional_identify_tool(identify_tool) as tool:
+            identify_results = tool.identify(
+                geometry=QgsGeometry.fromPointXY(location),
+                mode=QgsMapToolIdentify.IdentifyMode.ActiveLayer,
+                layerType=QgsMapToolIdentify.Type.VectorLayer,
+            )
+
+        if len(identify_results) < 1:
+            return None
+
+        identify_result = identify_results[0]
+        layer, feature = (
+            cast(QgsVectorLayer, identify_result.mLayer),
+            identify_result.mFeature,
+        )
 
         (
             *_,
@@ -252,8 +288,6 @@ class SegmentReshapeTool(QgsMapToolEdit):
             _,
         ) = feature.geometry().closestSegmentWithContext(location)
 
-        self.find_segment_results = find_related.find_segment_to_reshape(
-            active_layer, feature, (next_vertex_index - 1, next_vertex_index)
+        return find_related.find_segment_to_reshape(
+            layer, feature, (next_vertex_index - 1, next_vertex_index)
         )
-
-        return self.find_segment_results.segment, active_layer
