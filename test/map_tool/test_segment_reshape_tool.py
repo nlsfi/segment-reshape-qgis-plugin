@@ -120,7 +120,8 @@ def test_change_to_change_to_reshape_mode_toggles_pick_mode_off(
 ):
     map_tool.tool_mode = ToolMode.PICK_SEGMENT
 
-    map_tool._change_to_reshape_mode()
+    old_geom = QgsGeometry.fromWkt("LINESTRING(0 0, 1 1)")
+    map_tool._change_to_reshape_mode_for_geom(old_geom)
 
     assert map_tool.tool_mode == ToolMode.RESHAPE
 
@@ -196,93 +197,73 @@ def test_left_mouse_click_in_reshape_mode_adds_points_to_rubberbands(
     map_tool: SegmentReshapeTool,
     mocker: MockerFixture,
 ):
-    map_tool._change_to_reshape_mode()
-
     m_make_reshape_edits = mocker.patch.object(
         reshape, "make_reshape_edits", autospec=True
     )
+    old_geom = QgsGeometry.fromWkt("LINESTRING(0 0, 1 1)")
+    map_tool._change_to_reshape_mode_for_geom(old_geom)
 
     map_tool._handle_mouse_click_event(MOUSE_LOCATION, Qt.LeftButton)
 
-    assert not map_tool.new_segment_rubber_band.asGeometry().isEmpty()
-    assert not map_tool.temporary_new_segment_rubber_band.asGeometry().isEmpty()
+    assert (
+        map_tool.new_segment_rubber_band.asGeometry().asWkt() == "LineString (1.5 1.5)"
+    )
+    assert (
+        map_tool.temporary_new_segment_rubber_band.asGeometry().asWkt()
+        == "LineString (1.5 1.5, 0 0)"
+    )
 
     m_make_reshape_edits.assert_not_called()
 
 
-def test_pressing_backspace_in_reshape_mode_removes_point_from_rubberband(
+@pytest.mark.parametrize(
+    ("points_to_remove", "expected_new", "expected_temp"),
+    [
+        (1, "LineString (0 0, 1 1)", "LineString (1 1, -1 -1)"),
+        (2, "LineString (0 0)", "LineString (0 0, -1 -1)"),
+        (3, "LineString EMPTY", "LineString (1 0, -1 -1)"),
+        (6, "LineString EMPTY", "LineString (1 0, -1 -1)"),
+    ],
+    ids=[
+        "undo-few-last",
+        "undo-so-that-one-left",
+        "undo-first-point_temp-should-change-to-old_geom-start",
+        "undo-when-no-points-left_temp-should-change-to-old_geom-start",
+    ],
+)
+def test_undo_add_vertex_should_update_new_and_temp_rubberband(
     map_tool: SegmentReshapeTool,
+    points_to_remove: int,
+    expected_new: str,
+    expected_temp: str,
 ):
-    map_tool.old_segment_rubber_band.setToGeometry(
-        QgsGeometry.fromWkt("LINESTRING(0 0, 1 1, 2 2, 3 3, 4 4, 5 5)")
-    )
-    map_tool.new_segment_rubber_band.setToGeometry(
-        QgsGeometry.fromWkt("LINESTRING(0 0, 1 1, 2 2, 3 3, 4 4, 5 5)")
-    )
-    map_tool.temporary_new_segment_rubber_band.setToGeometry(
-        QgsGeometry.fromWkt("LINESTRING(0 0, 1 1, 2 2, 3 3, 4 4, 5 5)")
-    )
-    map_tool.tool_mode = ToolMode.RESHAPE
+    old_geom = QgsGeometry.fromWkt("LINESTRING(1 0, 2 0, 3 0)")
+    map_tool._change_to_reshape_mode_for_geom(old_geom)
 
-    map_tool._handle_key_event(Qt.Key_Backspace)
+    new_geom = QgsGeometry.fromWkt("LINESTRING(0 0, 1 1, 2 2)")
+    map_tool.new_segment_rubber_band.setToGeometry(new_geom)
+
+    # Move cursor to move temp rubberband end point
+    map_tool._handle_mouse_move_event(QgsPointXY(-1, -1))
+
+    # Undo n times
+    for _ in range(points_to_remove):
+        map_tool._handle_key_event(Qt.Key_Backspace)
 
     assert map_tool.tool_mode == ToolMode.RESHAPE
+    assert map_tool.new_segment_rubber_band.asGeometry().asWkt() == expected_new
+    assert map_tool.old_segment_rubber_band.asGeometry().asWkt() == old_geom.asWkt()
     assert (
-        map_tool.new_segment_rubber_band.asGeometry().asWkt()
-        == "LineString (0 0, 1 1, 2 2, 3 3, 4 4)"
+        map_tool.temporary_new_segment_rubber_band.asGeometry().asWkt() == expected_temp
     )
-    assert not map_tool.old_segment_rubber_band.asGeometry().isEmpty()
-    assert not map_tool.temporary_new_segment_rubber_band.asGeometry().isEmpty()
-
-
-def test_pressing_backspace_twice_in_reshape_mode_removes_points_from_rubberband(
-    map_tool: SegmentReshapeTool,
-):
-    map_tool.new_segment_rubber_band.setToGeometry(
-        QgsGeometry.fromWkt("LINESTRING(0 0, 1 1, 2 2, 3 3, 4 4, 5 5)")
-    )
-    map_tool.tool_mode = ToolMode.RESHAPE
-
-    map_tool._handle_key_event(Qt.Key_Backspace)
-    map_tool._handle_key_event(Qt.Key_Backspace)
-
-    assert (
-        map_tool.new_segment_rubber_band.asGeometry().asWkt()
-        == "LineString (0 0, 1 1, 2 2, 3 3)"
-    )
-
-
-def test_pressing_backspace_in_reshape_mode_with_only_one_point_in_rubberband(
-    map_tool: SegmentReshapeTool,
-):
-    map_tool.temporary_new_segment_rubber_band.reset()
-    map_tool.new_segment_rubber_band.setToGeometry(QgsGeometry.fromWkt("POINT(0 0)"))
-    map_tool.tool_mode = ToolMode.RESHAPE
-
-    map_tool._handle_key_event(Qt.Key_Backspace)
-
-    assert map_tool.new_segment_rubber_band.asGeometry().isEmpty()
-    assert not map_tool.temporary_new_segment_rubber_band.asGeometry().isEmpty()
-
-
-def test_pressing_backspace_in_reshape_mode_with_no_points_in_rubberband(
-    map_tool: SegmentReshapeTool,
-):
-    map_tool.new_segment_rubber_band.reset()
-    map_tool.temporary_new_segment_rubber_band.reset()
-    map_tool.tool_mode = ToolMode.RESHAPE
-
-    map_tool._handle_key_event(Qt.Key_Backspace)
-
-    assert map_tool.new_segment_rubber_band.asGeometry().isEmpty()
-    assert not map_tool.temporary_new_segment_rubber_band.asGeometry().isEmpty()
 
 
 def test_right_mouse_click_in_reshape_mode_changes_only_to_pick_mode_if_edited_geometry_is_empty(
     map_tool: SegmentReshapeTool,
     mocker: MockerFixture,
 ):
-    map_tool._change_to_reshape_mode()
+    old_geom = QgsGeometry.fromWkt("LINESTRING(0 0, 1 1)")
+    map_tool._change_to_reshape_mode_for_geom(old_geom)
 
     m_change_to_pick_location_mode = mocker.patch.object(
         map_tool, "_change_to_pick_location_mode", autospec=True
@@ -302,7 +283,8 @@ def test_right_mouse_click_in_reshape_mode_calls_reshape_if_edited_geometry_is_n
     map_tool: SegmentReshapeTool,
     mocker: MockerFixture,
 ):
-    map_tool._change_to_reshape_mode()
+    old_geom = QgsGeometry.fromWkt("LINESTRING(0 0, 1 1)")
+    map_tool._change_to_reshape_mode_for_geom(old_geom)
 
     m_change_to_pick_location_mode = mocker.patch.object(
         map_tool, "_change_to_pick_location_mode", autospec=True
