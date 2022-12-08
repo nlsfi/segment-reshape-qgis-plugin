@@ -367,8 +367,8 @@ def _build_line_from_line_segment_set(
                 trigger_in_part = len(parts)  # this will be the index of this part
 
             if not current_part_vertices:
-                current_part_vertices.append(QgsPoint(*vertex_tuple))
-            current_part_vertices.append(QgsPoint(*next_vertex_tuple))
+                current_part_vertices.append(vertex.clone())
+            current_part_vertices.append(next_vertex.clone())
         elif current_part_vertices:
             parts.append(current_part_vertices)
             current_part_vertices = []
