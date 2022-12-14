@@ -1,5 +1,7 @@
 # CHANGELOG
 
+## Unreleased
+
 ## [0.1.0] - 2022-12-14
 
 - Feat: Add support for key commands (backspace and esc) in vertex editing
