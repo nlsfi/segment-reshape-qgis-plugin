@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## Unreleased
+## [0.1.0] - 2022-12-14
 
 - Feat: Add support for key commands (backspace and esc) in vertex editing
 - Fix: In cases where segment was split from the middle the start and end parts of the line is correctly merged back together.
@@ -25,3 +25,4 @@
 [0.0.1]: https://github.com/nlsfi/segment-reshape-qgis-plugin/releases/tag/v0.0.1
 [0.0.2]: https://github.com/nlsfi/segment-reshape-qgis-plugin/releases/tag/v0.0.2
 [0.0.3]: https://github.com/nlsfi/segment-reshape-qgis-plugin/releases/tag/v0.0.3
+[0.1.0]: https://github.com/nlsfi/segment-reshape-qgis-plugin/releases/tag/v0.1.0
