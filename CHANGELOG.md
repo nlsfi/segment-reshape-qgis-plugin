@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Feat: Add pre-commit hooks for style checks of markdown files and for checking that commit messages follow conventional style
+
 ## [0.1.0] - 2022-12-14
 
 - Feat: Add support for key commands (backspace and esc) in vertex editing
