@@ -16,7 +16,11 @@ This project uses `pip-tools`. To update requirements, do `pip install pip-tools
 
 Included `.code-workspace` has necessary options set (linting, formatting, tests, extensions) set for VS Code.
 
-Verify code style with `pre-commit run --all-files`, or use `pre-commit install` and `pre-commit install --hook-type commit-msg` to generate an actual git hook.
+Verify code style with `pre-commit run --all-files`, or use `pre-commit install` to generate an actual git hook.
+
+## Commit message style
+
+Commit messages should follow [Conventional Commits notation](https://www.conventionalcommits.org/en/v1.0.0/#summary). Use `pre-commit install --hook-type commit-msg` to generate a git hook for checking commit messages.
 
 ## Release steps
 
