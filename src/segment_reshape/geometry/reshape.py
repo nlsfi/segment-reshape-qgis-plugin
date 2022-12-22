@@ -20,7 +20,7 @@
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass
-from typing import Iterator, List, Set, Union
+from typing import Dict, Iterator, List, Set, Tuple, Union
 
 from qgis.core import (
     QgsFeature,
@@ -219,10 +219,16 @@ def _reshape_geometry(
 def _move_edges(
     edges: List[ReshapeEdge], new_start: QgsPoint, new_end: QgsPoint
 ) -> None:
+    # hold on to the updates so next iteration for same feature
+    # uses the previous updated geometry instead of initial geometry
+    previously_updated_geoms: Dict[Tuple[str, int], QgsGeometry] = {}
+
     for edge in edges:
         _set_editable_and_begin_edit_command_once(edge.layer)
         new_geometry = _move_vertex(
-            edge.feature.geometry(),
+            previously_updated_geoms.get(
+                (edge.layer.id(), edge.feature.id()), edge.feature.geometry()
+            ),
             edge.vertex_index,
             new_start if edge.is_start else new_end,
         )
@@ -231,6 +237,7 @@ def _move_edges(
             edge.feature,
             new_geometry,
         )
+        previously_updated_geoms[(edge.layer.id(), edge.feature.id())] = new_geometry
 
 
 def _move_vertex(

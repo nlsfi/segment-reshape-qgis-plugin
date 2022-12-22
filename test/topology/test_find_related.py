@@ -238,6 +238,35 @@ def test_calculate_common_segment_for_single_feature_results_in_single_reshape_p
     assert not common_part.is_reversed
 
 
+def test_calculate_common_segment_for_same_polygon_at_both_edges(
+    preset_features_layer_factory: Callable[
+        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+    ],
+):
+    trigger_wkt = "POLYGON((5 5, 6 6, 7 5, 6 4, 5 5))"  # base
+    trigger_indices = (0, 1)
+    other_wkts = [
+        "POLYGON((6 3, 0 5, 6 7, 6 6, 5 5, 6 4, 6 3))",  # left
+        "POLYGON((6 3, 6 4, 7 5, 6 6, 6 7, 10 5, 6 3))",  # right
+    ]
+
+    layer, (feature, *other_features) = preset_features_layer_factory(
+        "source", [trigger_wkt] + other_wkts
+    )
+
+    (segment, common_parts, edges) = get_common_geometries(
+        layer,
+        feature,
+        [(layer, f) for f in other_features],
+        trigger_indices,
+    )
+
+    _assert_geom_equals_wkt(segment, "LINESTRING(6 4, 5 5, 6 6)")
+
+    assert len(common_parts) == 2  # base and left share a segment
+    assert len(edges) == 2  # right has vertex at both ends of the segment
+
+
 @pytest.mark.parametrize(
     argnames=("trigger_wkt", "trigger_indices", "other_wkts", "expected_part_details"),
     argvalues=[

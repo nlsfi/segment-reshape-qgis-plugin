@@ -755,6 +755,31 @@ def test_edge_polygons_moved_to_match_reshape(
     )
 
 
+def test_edge_polygon_with_both_start_and_end_moved_to_match_reshape(
+    preset_features_layer_factory: Callable[
+        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+    ],
+):
+    layer1, features1 = preset_features_layer_factory(
+        "l1",
+        ["POLYGON((0 0, 0 1, 1 1, 1 0, 0 0))"],
+    )
+
+    make_reshape_edits(
+        [],
+        [
+            ReshapeEdge(layer1, features1[0], 1, is_start=True),
+            ReshapeEdge(layer1, features1[0], 3, is_start=False),
+        ],
+        QgsLineString([(0, 2), (2, 2), (2, 0)]),
+    )
+
+    _assert_layer_geoms(
+        layer1,
+        ["POLYGON((0 0, 0 2, 1 1, 2 0, 0 0))"],
+    )
+
+
 def test_line_segment_collapsed_to_single_point(
     preset_features_layer_factory: Callable[
         [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
