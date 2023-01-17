@@ -1,5 +1,7 @@
 # CHANGELOG
 
+## Unreleased
+
 ## [0.1.1] - 2023-01-17
 
 - Fix: Correcly move multiple edges for same feature

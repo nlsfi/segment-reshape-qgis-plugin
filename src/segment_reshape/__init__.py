@@ -18,4 +18,4 @@
 #  along with segment-reshape-qgis-plugin. If not, see <https://www.gnu.org/licenses/>.
 
 
-__version__ = "0.1.1"
+__version__ = "0.1.1.post0"
