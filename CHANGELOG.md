@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Feat: Set z coordinate values of the reshaped geometry to QGIS's default z coordinate value instead of NaN
+
 ## [0.1.1] - 2023-01-17
 
 - Fix: Correcly move multiple edges for same feature

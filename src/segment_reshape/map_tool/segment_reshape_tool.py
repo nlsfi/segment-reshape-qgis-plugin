@@ -22,7 +22,7 @@ from contextlib import contextmanager
 from enum import Enum
 from typing import Iterator, Optional, Tuple, cast
 
-from qgis.core import QgsGeometry, QgsLineString, QgsPointXY, QgsVectorLayer
+from qgis.core import QgsGeometry, QgsLineString, QgsPoint, QgsPointXY, QgsVectorLayer
 from qgis.gui import (
     QgsMapCanvas,
     QgsMapMouseEvent,
@@ -31,7 +31,7 @@ from qgis.gui import (
     QgsRubberBand,
     QgsSnapIndicator,
 )
-from qgis.PyQt.QtCore import Qt
+from qgis.PyQt.QtCore import QSettings, Qt
 from qgis.PyQt.QtGui import QColor, QKeyEvent
 from qgis.utils import iface
 from qgis_plugin_tools.tools.decorations import log_if_fails
@@ -178,10 +178,28 @@ class SegmentReshapeTool(QgsMapToolEdit):
             return
 
         new_geometry = self.new_segment_rubber_band.asGeometry()
+
+        if QSettings().value("/qgis/digitizing/default_z_value"):
+            default_z_value = float(
+                QSettings().value("/qgis/digitizing/default_z_value")
+            )
+        else:
+            default_z_value = 0
+
+        new_geometry_vertices = []
+        for i in range(len(list(new_geometry.vertices()))):
+            new_geometry_vertices.append(
+                QgsPoint(
+                    new_geometry.vertexAt(i).x(),
+                    new_geometry.vertexAt(i).y(),
+                    default_z_value,
+                )
+            )
+
         reshape.make_reshape_edits(
             self.find_segment_results.common_parts,
             self.find_segment_results.edges,
-            QgsLineString(list(new_geometry.vertices())),
+            QgsLineString(new_geometry_vertices),
         )
 
         self._change_to_pick_location_mode()
