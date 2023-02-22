@@ -9,12 +9,10 @@ jobs:
   pytest:
     runs-on: ubuntu-latest
     container:
-      image: qgis/qgis:${{ matrix.qgis-image-tag }}
+      image: qgis/qgis:${{ matrix.qgis-image-tags }}
     strategy:
       matrix:
-        qgis-image-tag:
-          - release-3_22@sha256:a05df35259317e3457d4cdc73f0aabf0623f1e7a8257c56bff10b041ded3dce3
-          - release-3_26@sha256:3a7d5654782ca856b4bddcad88d1e5c7562f5a58015876ec6143b89bd77d2791
+        qgis-image-tags: [release-3_22, release-3_26]
       fail-fast: false
 
     steps:
