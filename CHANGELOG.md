@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## Unreleased
+## [0.1.2] - 2023-02-23
 
 - Feat: Set z coordinate values of the reshaped geometry to QGIS's default z coordinate value instead of NaN
 
@@ -35,3 +35,4 @@
 [0.0.3]: https://github.com/nlsfi/segment-reshape-qgis-plugin/releases/tag/v0.0.3
 [0.1.0]: https://github.com/nlsfi/segment-reshape-qgis-plugin/releases/tag/v0.1.0
 [0.1.1]: https://github.com/nlsfi/segment-reshape-qgis-plugin/releases/tag/v0.1.1
+[0.1.2]: https://github.com/nlsfi/segment-reshape-qgis-plugin/releases/tag/v0.1.2
