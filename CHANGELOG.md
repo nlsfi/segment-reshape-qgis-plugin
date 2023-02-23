@@ -1,5 +1,7 @@
 # CHANGELOG
 
+## Unreleased
+
 ## [0.1.2] - 2023-02-23
 
 - Feat: Set z coordinate values of the reshaped geometry to QGIS's default z coordinate value instead of NaN
