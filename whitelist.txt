@@ -15,3 +15,4 @@ rubberbands
 teardown
 utils
 wkb
+pyqt

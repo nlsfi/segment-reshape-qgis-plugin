@@ -19,21 +19,29 @@
 
 import logging
 from contextlib import contextmanager
-from enum import Enum
-from typing import Iterator, Optional, Tuple, cast
+from enum import Enum, IntEnum
+from typing import Iterator, Optional, Tuple, Union, cast, overload
 
-from qgis.core import QgsGeometry, QgsLineString, QgsPoint, QgsPointXY, QgsVectorLayer
+from qgis.core import (
+    QgsApplication,
+    QgsGeometry,
+    QgsLineString,
+    QgsPoint,
+    QgsPointLocator,
+    QgsPointXY,
+    QgsVectorLayer,
+)
 from qgis.gui import (
+    QgisInterface,
     QgsMapCanvas,
     QgsMapMouseEvent,
-    QgsMapToolEdit,
+    QgsMapToolCapture,
     QgsMapToolIdentify,
     QgsRubberBand,
-    QgsSnapIndicator,
 )
-from qgis.PyQt.QtCore import QSettings, Qt
+from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtGui import QColor, QKeyEvent
-from qgis.utils import iface
+from qgis.utils import iface as iface_
 from qgis_plugin_tools.tools.decorations import log_if_fails
 from qgis_plugin_tools.tools.i18n import tr
 from qgis_plugin_tools.tools.messages import MsgBar
@@ -41,7 +49,13 @@ from qgis_plugin_tools.tools.messages import MsgBar
 from segment_reshape.geometry import reshape
 from segment_reshape.topology import find_related
 
+iface = cast(QgisInterface, iface_)
+
 LOGGER = logging.getLogger(__name__)
+
+
+class CoordinateTransformationError(Exception):
+    ...
 
 
 @contextmanager
@@ -58,81 +72,152 @@ def _optional_identify_tool(
             tool.deleteLater()
 
 
+COLOR_BLUE = QColor(10, 20, 150)
+COLOR_GREY = QColor(211, 211, 211)
+
+
 class ToolMode(Enum):
     PICK_SEGMENT = "pick_segment"
     RESHAPE = "reshape"
 
 
-class SegmentReshapeTool(QgsMapToolEdit):
+class AddVertexReturn(IntEnum):
+    Success = 0
+    TransformationError = 2
+
+
+class SegmentReshapeTool(QgsMapToolCapture):
+    _tool_mode: ToolMode
+
     def __init__(self, canvas: QgsMapCanvas) -> None:
-        super().__init__(canvas)
-        self.tool_mode = ToolMode.PICK_SEGMENT
+        super().__init__(
+            canvas, iface.cadDockWidget(), QgsMapToolCapture.CaptureMode.CaptureLine
+        )
 
         self.old_segment_rubber_band = QgsRubberBand(canvas)
-        self.old_segment_rubber_band.setStrokeColor(QColor(10, 20, 150))
+        self.old_segment_rubber_band.setStrokeColor(COLOR_BLUE)
         self.old_segment_rubber_band.setWidth(10)
 
-        self.new_segment_rubber_band = QgsRubberBand(canvas)
-        self.new_segment_rubber_band.setStrokeColor(QColor(200, 50, 50))
-        self.new_segment_rubber_band.setWidth(3)
-
-        self.temporary_new_segment_rubber_band = QgsRubberBand(canvas)
-        self.temporary_new_segment_rubber_band.setStrokeColor(QColor(200, 50, 50))
-        self.temporary_new_segment_rubber_band.setLineStyle(Qt.PenStyle.DotLine)
+        self.start_point_indicator_rubber_band = QgsRubberBand(canvas)
+        self.start_point_indicator_rubber_band.setStrokeColor(COLOR_GREY)
+        self.start_point_indicator_rubber_band.setLineStyle(Qt.PenStyle.DotLine)
 
         self.find_segment_results = find_related.CommonGeometriesResult(None, [], [])
-
-        self.deactivated.connect(self._change_to_pick_location_mode)
 
         self._identify_tool = QgsMapToolIdentify(canvas)
-        self.snap_indicator = QgsSnapIndicator(canvas)
-        self.snapping_utils = canvas.snappingUtils()
+
+    def activate(self) -> None:
+        self._change_to_pick_location_mode()
+        super().activate()
+
+    def deactivate(self) -> None:
+        self.old_segment_rubber_band.hide()
+        self.start_point_indicator_rubber_band.hide()
+
+        return super().deactivate()
 
     def _change_to_pick_location_mode(self) -> None:
-        self.tool_mode = ToolMode.PICK_SEGMENT
+        self._tool_mode = ToolMode.PICK_SEGMENT
+        self.setCursor(Qt.CrossCursor)
+        self.setAutoSnapEnabled(False)
+        self.setAdvancedDigitizingAllowed(False)
 
         self.old_segment_rubber_band.reset()
-        self.new_segment_rubber_band.reset()
-        self.temporary_new_segment_rubber_band.reset()
+        self.start_point_indicator_rubber_band.reset()
 
         self.find_segment_results = find_related.CommonGeometriesResult(None, [], [])
-
-        self.snap_indicator.setVisible(False)
 
     def _change_to_reshape_mode_for_geom(
         self, old_geom: QgsGeometry, layer: Optional[QgsVectorLayer] = None
     ) -> None:
-        self.tool_mode = ToolMode.RESHAPE
+        self._tool_mode = ToolMode.RESHAPE
+        self.setCursor(
+            QgsApplication.getThemeCursor(QgsApplication.Cursor.CapturePoint)
+        )
+        self.setAutoSnapEnabled(True)
+        self.setAdvancedDigitizingAllowed(True)
+
+        self._common_segment_to_reshape = old_geom
+        self._active_layer = layer
 
         self.old_segment_rubber_band.setToGeometry(old_geom, layer)
 
-        self.new_segment_rubber_band.reset()
-        self.is_new_segment_reset = True
-
-        self.temporary_new_segment_rubber_band.reset()
+        self.start_point_indicator_rubber_band.reset()
+        self.start_point_indicator_rubber_band.show()
         start_point = self.old_segment_rubber_band.getPoint(0, 0)
-        self.temporary_new_segment_rubber_band.addPoint(start_point, True)
+        self.start_point_indicator_rubber_band.addPoint(start_point, True)
 
     def keyPressEvent(self, key_event: QKeyEvent) -> None:  # noqa: N802
-        # If not ignored, event drains through to super
-        key_event.ignore()
-        self._handle_key_event(key_event.key())
+        point_count = self.size()
+        super().keyPressEvent(key_event)  # handle normal undo and cancel procedures
+        if self._tool_mode == ToolMode.RESHAPE:
+            if key_event.key() == Qt.Key_Escape:
+                self._change_to_pick_location_mode()
+            elif (
+                key_event.key() in (Qt.Key_Delete, Qt.Key_Backspace)
+                and point_count == 1
+            ):
+                # self.undo() resists to undo the first point so force back to initial
+                # reshape mode
+                self.stopCapturing()
+                self._change_to_reshape_mode_for_geom(
+                    self._common_segment_to_reshape, self._active_layer
+                )
 
-    def canvasReleaseEvent(self, mouse_event: QgsMapMouseEvent) -> None:  # noqa: N802
-        location = self.toMapCoordinates(mouse_event.pos())
-        self._handle_mouse_click_event(location, mouse_event.button())
+    @overload
+    def addVertex(self, point: QgsPointXY) -> int:  # noqa: N802
+        ...
+
+    @overload
+    def addVertex(  # noqa: N802
+        self, mapPoint: QgsPointXY, match: QgsPointLocator.Match  # noqa: N803
+    ) -> int:
+        ...
+
+    def addVertex(self, *args, **kwargs) -> int:  # noqa: N802
+        result = super().addVertex(*args, **kwargs)
+        self.start_point_indicator_rubber_band.hide()
+        return result
 
     @log_if_fails
-    def _handle_mouse_click_event(
-        self, location: QgsPointXY, mouse_button: Qt.MouseButton
+    def canvasReleaseEvent(self, mouse_event: QgsMapMouseEvent) -> None:  # noqa: N802
+        if self._tool_mode == ToolMode.PICK_SEGMENT:
+            if mouse_event.button() == Qt.LeftButton:
+                self._handle_pick_segment_left_click(mouse_event.mapPoint())
+            return
+        super().canvasReleaseEvent(mouse_event)
+
+    def cadCanvasReleaseEvent(  # noqa: N802
+        self, mouse_event: QgsMapMouseEvent
     ) -> None:
-        if self.tool_mode == ToolMode.PICK_SEGMENT and mouse_button == Qt.LeftButton:
-            self._handle_pick_segment_left_click(location)
-        elif self.tool_mode == ToolMode.RESHAPE:
-            if mouse_button == Qt.LeftButton:
-                self._handle_reshape_left_click(location)
-            elif mouse_button == Qt.RightButton:
+        """Override of the QgsMapToolAdvancedDigitizing.cadCanvasReleaseEvent
+
+        This will receive adapted events from the cad system whenever a
+        canvasReleaseEvent is triggered and it's not hidden by the cad's
+        construction mode.
+
+        Args:
+            mouse_event (QgsMapMouseEvent): Mouse events prepared by the cad system
+        """
+
+        if self._tool_mode == ToolMode.RESHAPE:
+            if mouse_event.button() == Qt.LeftButton:
+                result = self.addVertex(
+                    mouse_event.mapPoint(), mouse_event.mapPointMatch()
+                )
+                if result == AddVertexReturn.TransformationError:
+                    MsgBar.warning(
+                        tr("Cannot transform the point to the layers coordinate system")
+                    )
+                    return
+                self.startCapturing()
+            elif mouse_event.button() == Qt.RightButton:
                 self._handle_reshape_right_click()
+
+    def cadCanvasMoveEvent(self, mouse_event: QgsMapMouseEvent) -> None:  # noqa N802
+        if self._tool_mode == ToolMode.RESHAPE and self.size() == 0:
+            self.start_point_indicator_rubber_band.movePoint(mouse_event.mapPoint())
+        return super().cadCanvasMoveEvent(mouse_event)
 
     def _handle_pick_segment_left_click(self, location: QgsPointXY) -> None:
         common_segment, layer = self._find_common_segment(location)
@@ -157,97 +242,27 @@ class SegmentReshapeTool(QgsMapToolEdit):
         )
         self._change_to_reshape_mode_for_geom(QgsGeometry(common_segment), layer)
 
-    def _handle_reshape_left_click(self, location: QgsPointXY) -> None:
-        if self.snap_indicator.isVisible():
-            location = self.snap_indicator.match().point()
-
-        self.new_segment_rubber_band.addPoint(location, True)
-        if self.is_new_segment_reset:
-            # Adding a point to new rubberband adds actually 2 points.
-            # Remove the second since it messes the undo logic
-            self.new_segment_rubber_band.removeLastPoint()
-        self.is_new_segment_reset = False
-
-        # Move only the first point of the temp rubber band
-        self.temporary_new_segment_rubber_band.movePoint(0, location)
-
     def _handle_reshape_right_click(self) -> None:
-        # No points digitized => Cancel reshape
-        if self.new_segment_rubber_band.numberOfVertices() == 0:
+        new_geometry = self.captureCurve().curveToLine()
+        self.stopCapturing()
+
+        if new_geometry.isEmpty():
             self._change_to_pick_location_mode()
             return
 
-        new_geometry = self.new_segment_rubber_band.asGeometry()
-
-        if QSettings().value("/qgis/digitizing/default_z_value"):
-            default_z_value = float(
-                QSettings().value("/qgis/digitizing/default_z_value")
-            )
-        else:
-            default_z_value = 0
-
-        new_geometry_vertices = []
-        for i in range(len(list(new_geometry.vertices()))):
-            new_geometry_vertices.append(
-                QgsPoint(
-                    new_geometry.vertexAt(i).x(),
-                    new_geometry.vertexAt(i).y(),
-                    default_z_value,
-                )
-            )
+        new_geometry.addZValue(self.defaultZValue())
+        reshape_geom: Union[QgsPoint, QgsLineString] = new_geometry
+        if new_geometry.numPoints() == 1:
+            reshape_geom = new_geometry.pointN(0)
 
         reshape.make_reshape_edits(
             self.find_segment_results.common_parts,
             self.find_segment_results.edges,
-            QgsLineString(new_geometry_vertices),
+            reshape_geom,
         )
 
         self._change_to_pick_location_mode()
         self.canvas().refresh()
-
-        MsgBar.info(
-            tr("Features reshaped"),
-            success=True,
-        )
-
-    def canvasMoveEvent(self, mouse_event: QgsMapMouseEvent) -> None:  # noqa: N802
-        if self.tool_mode == ToolMode.RESHAPE:
-            snap_match = self.snapping_utils.snapToMap(mouse_event.pos())
-            self.snap_indicator.setMatch(snap_match)
-
-        location = self.toMapCoordinates(mouse_event.pos())
-        self._handle_mouse_move_event(location)
-
-    def _handle_key_event(self, key: Qt.Key) -> None:
-        if self.tool_mode == ToolMode.RESHAPE:
-            if key == Qt.Key_Escape:
-                self._abort_reshape()
-            elif key in (Qt.Key_Backspace, Qt.Key_Delete):
-                self._undo_last_vertex()
-
-    def _handle_mouse_move_event(self, location: QgsPointXY) -> None:
-        if self.tool_mode == ToolMode.RESHAPE:
-            if self.snap_indicator.isVisible():
-                location = self.snap_indicator.match().point()
-
-            # Set the last point of temp rubber band to track cursor location
-            self.temporary_new_segment_rubber_band.movePoint(location)
-
-    def _abort_reshape(self) -> None:
-        self._change_to_pick_location_mode()
-
-    def _undo_last_vertex(self) -> None:
-        self.new_segment_rubber_band.removeLastPoint()
-        number_of_vertices = self.new_segment_rubber_band.numberOfVertices()
-        if number_of_vertices >= 1:
-            previous_point = self.new_segment_rubber_band.getPoint(
-                0, number_of_vertices - 1
-            )
-        else:
-            previous_point = self.old_segment_rubber_band.getPoint(0, 0)
-
-        # Move the first point of the temp rubber band
-        self.temporary_new_segment_rubber_band.movePoint(0, previous_point)
 
     def _find_common_segment(
         self, location: QgsPointXY
