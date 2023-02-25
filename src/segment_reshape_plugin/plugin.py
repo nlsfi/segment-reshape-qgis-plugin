@@ -18,13 +18,14 @@
 #  along with segment-reshape-qgis-plugin. If not, see <https://www.gnu.org/licenses/>.
 
 import logging
-from typing import Optional
+from typing import Optional, cast
 
 import qgis_plugin_tools
-from qgis.PyQt.QtCore import QCoreApplication, QTranslator
+from qgis.gui import QgisInterface
+from qgis.PyQt.QtCore import QCoreApplication, QObject, QTranslator
 from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import QAction, QToolBar, QWidget
-from qgis.utils import iface
+from qgis.PyQt.QtWidgets import QAction, QToolBar
+from qgis.utils import iface as iface_
 from qgis_plugin_tools.tools.custom_logging import setup_loggers
 from qgis_plugin_tools.tools.i18n import setup_translation, tr
 from qgis_plugin_tools.tools.resources import resources_path
@@ -33,10 +34,11 @@ import segment_reshape
 import segment_reshape_plugin
 from segment_reshape.map_tool.segment_reshape_tool import SegmentReshapeTool
 
+iface = cast(QgisInterface, iface_)
 LOGGER = logging.getLogger(__name__)
 
 
-class SegmentReshapePlugin(QWidget):
+class SegmentReshapePlugin(QObject):
     def __init__(self) -> None:
         super().__init__(parent=None)
 
@@ -61,40 +63,39 @@ class SegmentReshapePlugin(QWidget):
             message_log_name=tr("Segment reshape tool"),
         )
 
-        # Create toolbar
-        toolbar: QToolBar = iface.addToolBar(
+        toolbar = iface.addToolBar(
             self.tr("Segment reshape toolbar"),
         )
         toolbar.setObjectName("segment-reshape-toolbar")
 
-        # Add action
-        action = QAction(
+        self.segment_reshape_tool_action = QAction(
             QIcon(resources_path("icons/segment_reshape.svg")),
             self.tr("Reshape common segment"),
             iface.mainWindow(),
         )
-        action.setCheckable(True)
-        action.triggered.connect(self._segment_reshape_action_triggered)
 
-        self.segment_reshape_tool.setAction(action)
-        toolbar.addAction(action)
-        self.segment_reshape_tool_action = action
+        self.segment_reshape_tool_action.setCheckable(True)
+        self.segment_reshape_tool_action.triggered.connect(
+            self._activate_reshape_map_tool
+        )
+
+        self.segment_reshape_tool.setAction(self.segment_reshape_tool_action)
+        toolbar.addAction(self.segment_reshape_tool_action)
 
         self.toolbar = toolbar
 
     def unload(self) -> None:
         if self.toolbar is not None:
             self.toolbar.deleteLater()
-        del self.toolbar
         self.toolbar = None
 
         self._teardown_loggers()
         self._teardown_loggers = lambda: None
 
-    def _segment_reshape_action_triggered(self, checked: bool) -> None:
-        if checked is True:
-            if iface.mapCanvas().mapTool() != self.segment_reshape_tool:
-                iface.mapCanvas().setMapTool(self.segment_reshape_tool)
-            self.segment_reshape_tool.activate()
+    def _activate_reshape_map_tool(self) -> None:
+        if not self.segment_reshape_tool_action:
+            return
+        if self.segment_reshape_tool_action.isChecked():
+            iface.mapCanvas().setMapTool(self.segment_reshape_tool)
         else:
-            self.segment_reshape_tool.deactivate()
+            iface.mapCanvas().unsetMapTool(self.segment_reshape_tool)
