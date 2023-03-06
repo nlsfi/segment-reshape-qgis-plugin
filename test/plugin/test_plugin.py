@@ -48,14 +48,8 @@ def test_plugin_action_activates_or_deactivates_reshape_map_tool(
     assert plugin_loaded.segment_reshape_tool_action is not None
     assert not plugin_loaded.segment_reshape_tool.isActive()
 
-    m_tool_deactivate = mocker.patch.object(
-        plugin_loaded.segment_reshape_tool,
-        "deactivate",
-    )
-
     plugin_loaded.segment_reshape_tool_action.trigger()
-
     assert plugin_loaded.segment_reshape_tool.isActive()
 
     plugin_loaded.segment_reshape_tool_action.trigger()
-    m_tool_deactivate.assert_called_once()
+    assert not plugin_loaded.segment_reshape_tool.isActive()
