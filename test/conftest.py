@@ -18,6 +18,7 @@
 #  along with segment-reshape-qgis-plugin. If not, see <https://www.gnu.org/licenses/>.
 
 from typing import Callable, List, Tuple
+from unittest.mock import Mock
 
 import pytest
 from qgis.core import (
@@ -30,6 +31,15 @@ from qgis.core import (
     QgsVectorLayerUtils,
     QgsWkbTypes,
 )
+from qgis.gui import QgsAdvancedDigitizingDockWidget
+
+
+@pytest.fixture(scope="session")
+def qgis_iface(qgis_iface):
+    qgis_iface.cadDockWidget = Mock(
+        return_value=QgsAdvancedDigitizingDockWidget(qgis_iface.mapCanvas())
+    )
+    return qgis_iface
 
 
 @pytest.fixture()
