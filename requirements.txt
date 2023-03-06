@@ -126,6 +126,8 @@ pyflakes==2.3.1
     # via flake8
 pyparsing==3.0.9
     # via packaging
+pyqt5-stubs==5.15.6.0
+    # via -r requirements.in
 pytest==6.2.5
     # via
     #   -r requirements.in
