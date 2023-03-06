@@ -214,7 +214,7 @@ class SegmentReshapeTool(QgsMapToolCapture):
             elif mouse_event.button() == Qt.RightButton:
                 self._handle_reshape_right_click()
 
-    def cadCanvasMoveEvent(self, mouse_event: QgsMapMouseEvent) -> None:  # noqa N802
+    def cadCanvasMoveEvent(self, mouse_event: QgsMapMouseEvent) -> None:  # noqa: N802
         if self._tool_mode == ToolMode.RESHAPE and self.size() == 0:
             self.start_point_indicator_rubber_band.movePoint(mouse_event.mapPoint())
         return super().cadCanvasMoveEvent(mouse_event)

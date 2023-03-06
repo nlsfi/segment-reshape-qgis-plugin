@@ -17,9 +17,16 @@
 #  You should have received a copy of the GNU General Public License
 #  along with segment-reshape-qgis-plugin. If not, see <https://www.gnu.org/licenses/>.
 
+from typing import TYPE_CHECKING
+
 from segment_reshape_plugin.plugin import SegmentReshapePlugin
 
+if TYPE_CHECKING:
+    from qgis.gui import QgisInterface
 
-def classFactory(iface) -> "SegmentReshapePlugin":  # noqa N802 (qgis naming)
+
+def classFactory(  # noqa: N802 (qgis naming)
+    iface: "QgisInterface",
+) -> SegmentReshapePlugin:
 
     return SegmentReshapePlugin()
