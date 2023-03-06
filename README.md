@@ -32,6 +32,40 @@ Return values are:
 
 Map tool is found in `segment_reshape.map_tool.segment_reshape_tool.SegmentReshapeTool`, it can be subclassed or used as is in custom plugins.
 
+The Map Tool should be taken into use as follows:
+
+```python
+
+from segment_reshape.map_tool.segment_reshape_tool import (
+    SegmentReshapeTool,
+    SegmentReshapeToolHandler,
+)
+
+class SegmentReshapePlugin(QObject):
+    def __init__(self, iface) -> None:
+        super().__init__(parent=None)
+        self.iface = iface
+
+        self.segment_reshape_tool = SegmentReshapeTool(iface.mapCanvas())
+
+    def initGui(self) -> None:
+        self.segment_reshape_tool_action = QAction(
+            QIcon(resources_path("icons/segment_reshape.svg")),
+            self.tr("Reshape common segment"),
+            self.iface.mainWindow(),
+        )
+        self.segment_reshape_tool_handler = SegmentReshapeToolHandler(
+            self.segment_reshape_tool, self.segment_reshape_tool_action
+        )
+        self.iface.registerMapToolHandler(self.segment_reshape_tool_handler)
+
+        self.toolbar = iface.addToolBar(
+            self.tr("Segment reshape toolbar"),
+        )
+        self.toolbar.addAction(self.segment_reshape_tool_action)
+
+```
+
 ## Development of segment-reshape-qgis-plugin
 
 See [development readme](./DEVELOPMENT.md).

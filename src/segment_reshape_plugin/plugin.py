@@ -32,7 +32,10 @@ from qgis_plugin_tools.tools.resources import resources_path
 
 import segment_reshape
 import segment_reshape_plugin
-from segment_reshape.map_tool.segment_reshape_tool import SegmentReshapeTool
+from segment_reshape.map_tool.segment_reshape_tool import (
+    SegmentReshapeTool,
+    SegmentReshapeToolHandler,
+)
 
 iface = cast(QgisInterface, iface_)
 LOGGER = logging.getLogger(__name__)
@@ -73,29 +76,21 @@ class SegmentReshapePlugin(QObject):
             self.tr("Reshape common segment"),
             iface.mainWindow(),
         )
-
-        self.segment_reshape_tool_action.setCheckable(True)
-        self.segment_reshape_tool_action.triggered.connect(
-            self._activate_reshape_map_tool
+        self.segment_reshape_tool_handler = SegmentReshapeToolHandler(
+            self.segment_reshape_tool, self.segment_reshape_tool_action
         )
+        iface.registerMapToolHandler(self.segment_reshape_tool_handler)
 
-        self.segment_reshape_tool.setAction(self.segment_reshape_tool_action)
         toolbar.addAction(self.segment_reshape_tool_action)
 
         self.toolbar = toolbar
 
     def unload(self) -> None:
+        iface.unregisterMapToolHandler(self.segment_reshape_tool_handler)
+
         if self.toolbar is not None:
             self.toolbar.deleteLater()
         self.toolbar = None
 
         self._teardown_loggers()
         self._teardown_loggers = lambda: None
-
-    def _activate_reshape_map_tool(self) -> None:
-        if not self.segment_reshape_tool_action:
-            return
-        if self.segment_reshape_tool_action.isChecked():
-            iface.mapCanvas().setMapTool(self.segment_reshape_tool)
-        else:
-            iface.mapCanvas().unsetMapTool(self.segment_reshape_tool)

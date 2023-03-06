@@ -20,7 +20,7 @@
 import logging
 from contextlib import contextmanager
 from enum import Enum, IntEnum
-from typing import Iterator, Optional, Tuple, Union, cast, overload
+from typing import TYPE_CHECKING, Iterator, Optional, Tuple, Union, cast, overload
 
 from qgis.core import (
     QgsApplication,
@@ -30,9 +30,11 @@ from qgis.core import (
     QgsPointLocator,
     QgsPointXY,
     QgsVectorLayer,
+    QgsWkbTypes,
 )
 from qgis.gui import (
     QgisInterface,
+    QgsAbstractMapToolHandler,
     QgsMapCanvas,
     QgsMapMouseEvent,
     QgsMapToolCapture,
@@ -48,6 +50,10 @@ from qgis_plugin_tools.tools.messages import MsgBar
 
 from segment_reshape.geometry import reshape
 from segment_reshape.topology import find_related
+
+if TYPE_CHECKING:
+    from qgis.core import QgsMapLayer
+    from qgis.PyQt.QtWidgets import QAction
 
 iface = cast(QgisInterface, iface_)
 
@@ -84,6 +90,24 @@ class ToolMode(Enum):
 class AddVertexReturn(IntEnum):
     Success = 0
     TransformationError = 2
+
+
+class SegmentReshapeToolHandler(QgsAbstractMapToolHandler):
+    def __init__(self, tool: "SegmentReshapeTool", action: "QAction") -> None:
+        super().__init__(tool, action)
+
+    def isCompatibleWithLayer(  # noqa: N802
+        self, layer: "QgsMapLayer", context: QgsAbstractMapToolHandler.Context
+    ) -> bool:
+        return (
+            isinstance(layer, QgsVectorLayer)
+            and layer.geometryType()
+            in (
+                QgsWkbTypes.GeometryType.PolygonGeometry,
+                QgsWkbTypes.GeometryType.LineGeometry,
+            )
+            # and layer.isEditable()
+        )
 
 
 class SegmentReshapeTool(QgsMapToolCapture):
