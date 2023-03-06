@@ -3,11 +3,12 @@
 ## Unreleased
 
 - Feature: Digitizing the new geometry for a segment behaves now as the native QGIS digitizing tools. It supports etc. snapping, tracing and advanced cad tools.
+- Feature: Map tool button is enabled only when a line or polygon layer is active. This is implemented through MapToolHandler which ensures that the tool behaves like rest of the map tools. This means also that the tool can be deactivated only by selecting another map tool.
 - Fix: Color of the start point indicator line was changed to grey to make difference to the digitized line.
 
 ## [0.1.2] - 2023-02-23
 
-- Feat: Set z coordinate values of the reshaped geometry to QGIS's default z coordinate value instead of NaN
+- Feature: Set z coordinate values of the reshaped geometry to QGIS's default z coordinate value instead of NaN
 
 ## [0.1.1] - 2023-01-17
 

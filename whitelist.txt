@@ -16,3 +16,4 @@ teardown
 utils
 wkb
 pyqt
+unregister
