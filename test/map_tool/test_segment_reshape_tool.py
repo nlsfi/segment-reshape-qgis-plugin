@@ -394,7 +394,6 @@ def test_right_mouse_click_in_reshape_mode_calls_reshape_if_edited_geometry_is_n
         QgsPointXY(1, 1), QEvent.MouseButtonRelease, Qt.RightButton
     )
     map_tool.cadCanvasReleaseEvent(right_click)
-    # map_tool._handle_mouse_click_event(MOUSE_LOCATION, Qt.RightButton)
 
     m_change_to_pick_location_mode.assert_called_once()
     m_make_reshape_edits.assert_called_once()

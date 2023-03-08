@@ -99,14 +99,9 @@ class SegmentReshapeToolHandler(QgsAbstractMapToolHandler):
     def isCompatibleWithLayer(  # noqa: N802
         self, layer: "QgsMapLayer", context: QgsAbstractMapToolHandler.Context
     ) -> bool:
-        return (
-            isinstance(layer, QgsVectorLayer)
-            and layer.geometryType()
-            in (
-                QgsWkbTypes.GeometryType.PolygonGeometry,
-                QgsWkbTypes.GeometryType.LineGeometry,
-            )
-            # and layer.isEditable()
+        return isinstance(layer, QgsVectorLayer) and layer.geometryType() in (
+            QgsWkbTypes.GeometryType.PolygonGeometry,
+            QgsWkbTypes.GeometryType.LineGeometry,
         )
 
 
