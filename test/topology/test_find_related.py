@@ -762,7 +762,7 @@ def test_find_related_features_no_results_by_default_if_topological_editing_disa
 
     assert not QgsProject.instance().topologicalEditing()
 
-    results = find_related_features(source_layer, source_feature)
+    results = list(find_related_features(source_layer, source_feature))
 
     assert results == []
 
@@ -874,8 +874,10 @@ def test_find_related_features_finds_features_touching_the_target(
         ],
     )
 
-    results = find_related_features(
-        source_layer, source_feature, candidate_layers=[layer1, layer2, layer3]
+    results = list(
+        find_related_features(
+            source_layer, source_feature, candidate_layers=[layer1, layer2, layer3]
+        )
     )
 
     assert len(results) == 1 + 2 + 2

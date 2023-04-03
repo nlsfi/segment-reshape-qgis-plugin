@@ -102,16 +102,21 @@ def find_related_features(
     layer: QgsVectorLayer,
     feature: QgsFeature,
     candidate_layers: Optional[List[QgsVectorLayer]] = None,
-) -> List[Tuple[QgsVectorLayer, QgsFeature]]:
+) -> Iterator[Tuple[QgsVectorLayer, QgsFeature]]:
     if candidate_layers is None:
         candidate_layers = _find_topologically_related_project_layers(layer)
 
-    # distance within 0 should work, bbox rect would return excess stuff,
-    # feature must have equal vertex anyway for it be considered
-    request = QgsFeatureRequest()
-    request.setDistanceWithin(feature.geometry(), 0)
+    feature_geometry = feature.geometry()
 
-    return [
+    feature_geometry_engine = QgsGeometry.createGeometryEngine(
+        feature_geometry.constGet()
+    )
+    feature_geometry_engine.prepareGeometry()
+
+    request = QgsFeatureRequest()
+    request.setFilterRect(feature_geometry.boundingBox())  # noqa: SC200
+
+    return (
         (candidate_layer, candidate_feature)
         for candidate_layer in candidate_layers
         for candidate_feature in candidate_layer.getFeatures(request)
@@ -121,7 +126,8 @@ def find_related_features(
             layer,
             feature,
         )
-    ]
+        and feature_geometry_engine.intersects(candidate_feature.geometry().constGet())
+    )
 
 
 def _as_point_or_line_components(geom: QgsGeometry) -> Iterator[QgsGeometry]:
@@ -191,7 +197,7 @@ def _check_if_vertices_are_reversed(vertex_indices: List[int]) -> bool:
 def get_common_geometries(
     main_feature_layer: QgsVectorLayer,
     main_feature: QgsFeature,
-    related_features_by_layer: List[Tuple[QgsVectorLayer, QgsFeature]],
+    related_features_by_layer: Iterable[Tuple[QgsVectorLayer, QgsFeature]],
     main_feature_segment: Tuple[int, int],
 ) -> CommonGeometriesResult:
     # for now lines and polygons are supported as the trigger
