@@ -18,10 +18,10 @@
 #  along with segment-reshape-qgis-plugin. If not, see <https://www.gnu.org/licenses/>.
 
 from time import perf_counter
-from typing import Callable, List, Tuple
+from typing import Callable, List, Tuple, Union
 
 import pytest
-from qgis.core import QgsFeature, QgsGeometry, QgsProject, QgsVectorLayer
+from qgis.core import QgsFeature, QgsGeometry, QgsPointXY, QgsProject, QgsVectorLayer
 
 from segment_reshape.topology.find_related import (
     find_related_features,
@@ -390,24 +390,23 @@ def test_calculate_common_segment_for_multiple_lines_results_in_multiple_edges(
 )
 def test_calculate_common_segment_for_huge_polygon_coordinate_count_is_fast_enough(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, List[Union[QgsGeometry, str]]], Tuple[QgsVectorLayer, List[QgsFeature]]
     ],
     count: int,
     allowed_duration_ms: int,
 ):
-    polygon_wkt = "Polygon (("
-    polygon_wkt += ", ".join([f"{x} 0" for x in range(count + 1)]) + ", "
-    polygon_wkt += ", ".join([f"{count} {y}" for y in range(count + 1)]) + ", "
-    polygon_wkt += ", ".join([f"{x} {count}" for x in range(count, -1, -1)]) + ", "
-    polygon_wkt += ", ".join([f"0 {y}" for y in range(count, -1, -1)])
-    polygon_wkt += "))"
+    polygon_points = [QgsPointXY(x, 0) for x in range(count + 1)]
+    polygon_points += [QgsPointXY(count, y) for y in range(count + 1)]
+    polygon_points += [QgsPointXY(x, count) for x in range(count, -1, -1)]
+    polygon_points += [QgsPointXY(0, y) for y in range(count, -1, -1)]
+    polygon = QgsGeometry.fromPolygonXY([polygon_points])
 
-    other_wkt = (
-        "LINESTRING(" + ", ".join([f"{x} 0" for x in range(-500, count + 500)]) + ")"
+    line = QgsGeometry.fromPolylineXY(
+        [QgsPointXY(x, 0) for x in range(-500, count + 500)]
     )
 
-    layer, (feature,) = preset_features_layer_factory("source", [polygon_wkt])
-    other_layer, (other_feature,) = preset_features_layer_factory("other", [other_wkt])
+    layer, (feature,) = preset_features_layer_factory("source", [polygon])
+    other_layer, (other_feature,) = preset_features_layer_factory("other", [line])
 
     start = perf_counter()
     get_common_geometries(
