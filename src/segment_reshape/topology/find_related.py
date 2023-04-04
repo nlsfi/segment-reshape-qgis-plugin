@@ -30,12 +30,12 @@ from typing import (
 )
 
 from qgis.core import (
+    QgsAbstractGeometry,
     QgsFeature,
     QgsFeatureRequest,
     QgsGeometry,
     QgsLineString,
     QgsPoint,
-    QgsPointXY,
     QgsPolygon,
     QgsProject,
     QgsVectorLayer,
@@ -43,6 +43,7 @@ from qgis.core import (
 )
 
 from segment_reshape.geometry.reshape import ReshapeCommonPart, ReshapeEdge
+from segment_reshape.utils.geometry_utils import vertices
 
 Point = Tuple[float, float]
 Segment = FrozenSet[Point]
@@ -174,14 +175,40 @@ def _get_geom_component_of_vertex(geom: QgsGeometry, vertex_id: int) -> QgsGeome
         return QgsGeometry(part.clone())
 
 
-def _find_vertex_indices(geom: QgsGeometry, positions: Iterable[QgsPoint]) -> List[int]:
-    indices: List[int] = []
-    for position in positions:
-        distance, vertex_index = geom.closestVertexWithContext(QgsPointXY(position))
-        if distance != 0:
-            raise ValueError(f"could not find vertex index for {position} from {geom}")
-        indices.append(vertex_index)
-    return indices
+def _find_vertex_indices(
+    geom: QgsGeometry, segment: "QgsAbstractGeometry"
+) -> List[int]:
+    """Returns vertex indices of the geometry for matching vertices in the segment
+
+    Args:
+        geom (QgsGeometry): Geometry whose indices are requested
+        segment (QgsAbstractGeometry): Segment geometry (usually QgsPolyline
+            or QgsPoint) we want to match
+
+    Raises:
+        ValueError: Raises ValueError if some vertex from segment is not found
+            from the geom.
+
+    Returns:
+        List[int]: List of vertex indices of the geometry in every matcing vertex
+            of the segment
+    """
+
+    # Loop geometry only once and "cache" indices
+    vertex_to_id_map = {
+        (vertex.x(), vertex.y()): vertex_id for vertex_id, vertex in vertices(geom)
+    }
+
+    result: List[int] = []
+    for segment_vertex in segment.vertices():
+        try:
+            result.append(vertex_to_id_map[(segment_vertex.x(), segment_vertex.y())])
+        except KeyError:
+            raise ValueError(
+                f"could not find vertex index for {segment_vertex} from {geom}"
+            )
+
+    return result
 
 
 def _check_if_vertices_are_reversed(vertex_indices: List[int]) -> bool:
@@ -276,13 +303,13 @@ def get_common_geometries(
         ReshapeCommonPart(
             main_feature_layer,
             main_feature,
-            _find_vertex_indices(main_feature.geometry(), segment.vertices()),
+            _find_vertex_indices(main_feature.geometry(), segment),
             is_reversed=False,
         )
     ]
     for common_part_candidate in common_part_candidates:
         layer, feature = common_part_candidate
-        indices = _find_vertex_indices(feature.geometry(), segment.vertices())
+        indices = _find_vertex_indices(feature.geometry(), segment)
         common_parts.append(
             ReshapeCommonPart(
                 layer,
@@ -296,7 +323,7 @@ def get_common_geometries(
     for possible_edge_candidate in possible_edge_candidates:
         layer, feature, component = possible_edge_candidate
         if start.intersects(component):
-            indices = _find_vertex_indices(feature.geometry(), [segment.startPoint()])
+            indices = _find_vertex_indices(feature.geometry(), segment.startPoint())
             edges.append(
                 ReshapeEdge(
                     layer,
@@ -306,7 +333,7 @@ def get_common_geometries(
                 )
             )
         if end.intersects(component):
-            indices = _find_vertex_indices(feature.geometry(), [segment.endPoint()])
+            indices = _find_vertex_indices(feature.geometry(), segment.endPoint())
             edges.append(
                 ReshapeEdge(
                     layer,
