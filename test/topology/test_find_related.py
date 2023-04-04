@@ -376,33 +376,39 @@ def test_calculate_common_segment_for_multiple_lines_results_in_multiple_edges(
     reason="Performance has always been slow. There was an error in the test earlier."
 )
 @pytest.mark.parametrize(
-    argnames=("count", "allowed_duration_ms"),
+    argnames=("vertex_count", "allowed_duration_ms"),
     argvalues=[
-        (1000, 100),
-        (2000, 200),
-        (10000, 500),
+        (4000, 100),
+        (8000, 200),
+        (40000, 500),
     ],
     ids=[
-        "1000x4-in-100-ms",
-        "2000x4-in-200-ms",
-        "10000x4-in-500-ms",
+        "4000-in-100-ms",
+        "8000-in-200-ms",
+        "40000-in-500-ms",
     ],
 )
 def test_calculate_common_segment_for_huge_polygon_coordinate_count_is_fast_enough(
     preset_features_layer_factory: Callable[
         [str, List[Union[QgsGeometry, str]]], Tuple[QgsVectorLayer, List[QgsFeature]]
     ],
-    count: int,
+    vertex_count: int,
     allowed_duration_ms: int,
 ):
-    polygon_points = [QgsPointXY(x, 0) for x in range(count + 1)]
-    polygon_points += [QgsPointXY(count, y) for y in range(count + 1)]
-    polygon_points += [QgsPointXY(x, count) for x in range(count, -1, -1)]
-    polygon_points += [QgsPointXY(0, y) for y in range(count, -1, -1)]
+    # Build a square polygon
+    side_vertex_count = int(vertex_count / 4)
+    polygon_points = [QgsPointXY(x, 0) for x in range(side_vertex_count + 1)]
+    polygon_points += [
+        QgsPointXY(side_vertex_count, y) for y in range(side_vertex_count + 1)
+    ]
+    polygon_points += [
+        QgsPointXY(x, side_vertex_count) for x in range(side_vertex_count, -1, -1)
+    ]
+    polygon_points += [QgsPointXY(0, y) for y in range(side_vertex_count, -1, -1)]
     polygon = QgsGeometry.fromPolygonXY([polygon_points])
 
     line = QgsGeometry.fromPolylineXY(
-        [QgsPointXY(x, 0) for x in range(-500, count + 500)]
+        [QgsPointXY(x, 0) for x in range(-500, side_vertex_count + 500)]
     )
 
     layer, (feature,) = preset_features_layer_factory("source", [polygon])
@@ -413,10 +419,9 @@ def test_calculate_common_segment_for_huge_polygon_coordinate_count_is_fast_enou
         layer,
         feature,
         [(other_layer, other_feature)],
-        (count // 2, count // 2 - 1),
+        (side_vertex_count // 2, side_vertex_count // 2 - 1),
     )
     execution_time_s = perf_counter() - start
-
     assert (
         execution_time_s < allowed_duration_ms / 1000
     ), "common geometry code was not fast enough"
