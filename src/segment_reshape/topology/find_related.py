@@ -17,17 +17,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with segment-reshape-qgis-plugin. If not, see <https://www.gnu.org/licenses/>.
 
-from typing import (
-    FrozenSet,
-    Iterable,
-    Iterator,
-    List,
-    NamedTuple,
-    Optional,
-    Set,
-    Tuple,
-    cast,
-)
+from typing import FrozenSet, Iterable, Iterator, List, NamedTuple, Optional, Set, Tuple
 
 from qgis.core import (
     QgsAbstractGeometry,
@@ -347,9 +337,7 @@ def get_common_geometries(
 
 
 def _as_line_segments(geometry: QgsGeometry) -> Set[Segment]:
-    vertices = [
-        (point.x(), point.y()) for point in cast(QgsLineString, geometry.asPolyline())
-    ]
+    vertices = [(point.x(), point.y()) for point in geometry.vertices()]
     return {frozenset(line) for line in zip(vertices, vertices[1:])}
 
 
