@@ -17,7 +17,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with segment-reshape-qgis-plugin. If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Callable, List, Tuple
+from typing import Callable, List, Tuple, Union
 from unittest.mock import Mock
 
 import pytest
@@ -65,8 +65,13 @@ def memory_layer_factory() -> Callable[[str, QgsWkbTypes.Type], QgsVectorLayer]:
 def preset_features_layer_factory(
     memory_layer_factory: Callable[[str, QgsWkbTypes.Type], QgsVectorLayer]
 ) -> Callable[[str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]]:
-    def _factory(name: str, wkts: List[str]) -> Tuple[QgsVectorLayer, List[QgsFeature]]:
-        geometries = [QgsGeometry.fromWkt(wkt) for wkt in wkts]
+    def _factory(
+        name: str, geoms: List[Union[str, QgsGeometry]]
+    ) -> Tuple[QgsVectorLayer, List[QgsFeature]]:
+        geometries = [
+            QgsGeometry.fromWkt(geom) if isinstance(geom, str) else geom
+            for geom in geoms
+        ]
         layer = memory_layer_factory(name, geometries[0].wkbType())
         features = [
             QgsVectorLayerUtils.createFeature(layer, geom) for geom in geometries
