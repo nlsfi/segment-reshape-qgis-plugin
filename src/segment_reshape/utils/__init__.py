@@ -17,18 +17,9 @@
 #  You should have received a copy of the GNU General Public License
 #  along with segment-reshape-qgis-plugin. If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Union
+from segment_reshape.utils.geometry_utils import clone_geometry_safely, vertices
 
-from qgis.core import QgsAbstractGeometry, QgsGeometry
-
-
-def clone_geometry_safely(
-    geometry: Union[QgsGeometry, QgsAbstractGeometry]
-) -> QgsGeometry:
-    if isinstance(geometry, QgsGeometry):
-        original_abstract_geometry = geometry.get()
-        cloned_original_abstract_geometry = original_abstract_geometry.clone()
-        return QgsGeometry(cloned_original_abstract_geometry)
-    else:
-        cloned_original_abstract_geometry = geometry.clone()
-        return QgsGeometry(cloned_original_abstract_geometry)
+__all__ = [
+    "clone_geometry_safely",
+    "vertices",
+]
