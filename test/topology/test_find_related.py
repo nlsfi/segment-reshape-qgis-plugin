@@ -24,6 +24,7 @@ import pytest
 from qgis.core import QgsFeature, QgsGeometry, QgsPointXY, QgsProject, QgsVectorLayer
 
 from segment_reshape.topology.find_related import (
+    _find_vertex_indices,
     find_related_features,
     get_common_geometries,
 )
@@ -372,20 +373,49 @@ def test_calculate_common_segment_for_multiple_lines_results_in_multiple_edges(
         assert edge.is_start == expected_start
 
 
-@pytest.mark.xfail(
-    reason="Performance has always been slow. There was an error in the test earlier."
+@pytest.mark.parametrize(
+    ("geom_wkt", "segment_wkt", "expected_indices"),
+    [
+        ("Linestring(0 0, 1 1, 2 2)", "Linestring(1 1, 0 0)", [1, 0]),
+        ("Multipolygon(((1 1, 1 0, 0 0, 1 1)))", "Linestring(1 1, 0 0)", [3, 2]),
+        (
+            "Polygon ((0 0, 0 1, 1 1, 1 0, 0 0))",
+            "LineString (1 1, 1 0, 0 0, 0 1, 1 1)",
+            [2, 3, 4, 1, 2],
+        ),
+        ("Linestring(0 0, 1 1, 2 2)", "Linestring(1 1, 1 1, 0 0)", [1, 1, 0]),
+    ],
+    ids=["linestring", "multipolygon", "Linear ring", "Segment with duplicate points"],
 )
+def test_find_vertex_indices(geom_wkt, segment_wkt, expected_indices):
+    """Tests indices with"""
+    geom = QgsGeometry.fromWkt(geom_wkt)
+    segment = QgsGeometry.fromWkt(segment_wkt)
+
+    indices = _find_vertex_indices(geom, segment)
+    assert indices == expected_indices
+
+
+def test_find_vertex_indices_raises_error_with_non_matching_geometries():
+    # point 5,5 is not found from the geom
+    geom = QgsGeometry.fromWkt("Polygon ((0 0, 0 1, 1 1, 1 0, 0 0))")
+    segment = QgsGeometry.fromWkt("LineString (5 5, 1 0)")
+
+    with pytest.raises(ValueError):
+        _find_vertex_indices(geom, segment)
+
+
 @pytest.mark.parametrize(
     argnames=("vertex_count", "allowed_duration_ms"),
     argvalues=[
         (4000, 100),
         (8000, 200),
-        (40000, 500),
+        (40000, 1000),
     ],
     ids=[
         "4000-in-100-ms",
         "8000-in-200-ms",
-        "40000-in-500-ms",
+        "40000-in-1000-ms",
     ],
 )
 def test_calculate_common_segment_for_huge_polygon_coordinate_count_is_fast_enough(
