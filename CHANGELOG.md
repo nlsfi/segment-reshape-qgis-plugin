@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Feature: Change the mouse cursor to the wait cursor when finding common segment os editing is in progress
+- Performance improvments. Finding a common segment should now be a magnitude faster with large geometries.
+
 ## [0.1.3] - 2023-03-23
 
 - Feature: Digitizing the new geometry for a segment behaves now as the native QGIS digitizing tools. It supports etc. snapping, tracing and advanced cad tools.

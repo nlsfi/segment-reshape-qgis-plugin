@@ -20,7 +20,16 @@
 import logging
 from contextlib import contextmanager
 from enum import Enum, IntEnum
-from typing import TYPE_CHECKING, Iterator, Optional, Tuple, Union, cast, overload
+from typing import (
+    TYPE_CHECKING,
+    Generator,
+    Iterator,
+    Optional,
+    Tuple,
+    Union,
+    cast,
+    overload,
+)
 
 from qgis.core import (
     QgsApplication,
@@ -43,6 +52,7 @@ from qgis.gui import (
 )
 from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtGui import QColor, QKeyEvent
+from qgis.PyQt.QtWidgets import QApplication
 from qgis.utils import iface as iface_
 from qgis_plugin_tools.tools.decorations import log_if_fails
 from qgis_plugin_tools.tools.i18n import tr
@@ -76,6 +86,15 @@ def _optional_identify_tool(
             yield tool
         finally:
             tool.deleteLater()
+
+
+@contextmanager
+def override_cursor(cursor: Qt.CursorShape) -> Generator[None, None, None]:
+    QApplication.setOverrideCursor(cursor)
+    try:
+        yield
+    finally:
+        QApplication.restoreOverrideCursor()
 
 
 COLOR_BLUE = QColor(10, 20, 150)
@@ -239,49 +258,50 @@ class SegmentReshapeTool(QgsMapToolCapture):
         return super().cadCanvasMoveEvent(mouse_event)
 
     def _handle_pick_segment_left_click(self, location: QgsPointXY) -> None:
-        common_segment, layer = self._find_common_segment(location)
+        with override_cursor(Qt.WaitCursor):
+            common_segment, layer = self._find_common_segment(location)
+            # No active layer or active layer feature found
+            if layer is None:
+                return
 
-        # No active layer or active layer feature found
-        if layer is None:
-            return
+            if common_segment is None:
+                MsgBar.info(
+                    tr("No common segment found at location"),
+                    tr(
+                        "Features are not topologically connected "
+                        "or a single vertex was clicked"
+                    ),
+                )
+                return
 
-        if common_segment is None:
             MsgBar.info(
-                tr("No common segment found at location"),
-                tr(
-                    "Features are not topologically connected "
-                    "or a single vertex was clicked"
-                ),
+                tr("Common segment found, changing to reshape mode"),
+                success=True,
             )
-            return
-
-        MsgBar.info(
-            tr("Common segment found, changing to reshape mode"),
-            success=True,
-        )
-        self._change_to_reshape_mode_for_geom(QgsGeometry(common_segment), layer)
+            self._change_to_reshape_mode_for_geom(QgsGeometry(common_segment), layer)
 
     def _handle_reshape_right_click(self) -> None:
-        new_geometry = self.captureCurve().curveToLine()
-        self.stopCapturing()
+        with override_cursor(Qt.WaitCursor):
+            new_geometry = self.captureCurve().curveToLine()
+            self.stopCapturing()
 
-        if new_geometry.isEmpty():
+            if new_geometry.isEmpty():
+                self._change_to_pick_location_mode()
+                return
+
+            new_geometry.addZValue(self.defaultZValue())
+            reshape_geom: Union[QgsPoint, QgsLineString] = new_geometry
+            if new_geometry.numPoints() == 1:
+                reshape_geom = new_geometry.pointN(0)
+
+            reshape.make_reshape_edits(
+                self.find_segment_results.common_parts,
+                self.find_segment_results.edges,
+                reshape_geom,
+            )
+
             self._change_to_pick_location_mode()
-            return
-
-        new_geometry.addZValue(self.defaultZValue())
-        reshape_geom: Union[QgsPoint, QgsLineString] = new_geometry
-        if new_geometry.numPoints() == 1:
-            reshape_geom = new_geometry.pointN(0)
-
-        reshape.make_reshape_edits(
-            self.find_segment_results.common_parts,
-            self.find_segment_results.edges,
-            reshape_geom,
-        )
-
-        self._change_to_pick_location_mode()
-        self.canvas().refresh()
+            self.canvas().refresh()
 
     def _find_common_segment(
         self, location: QgsPointXY
