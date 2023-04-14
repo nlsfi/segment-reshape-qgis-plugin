@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## Unreleased
+## [0.1.4] - 2023-04-14
 
 - Feature: Change the mouse cursor to the wait cursor when finding common segment os editing is in progress
 - Performance improvments. Finding a common segment should now be a magnitude faster with large geometries.
@@ -48,3 +48,4 @@
 [0.1.1]: https://github.com/nlsfi/segment-reshape-qgis-plugin/releases/tag/v0.1.1
 [0.1.2]: https://github.com/nlsfi/segment-reshape-qgis-plugin/releases/tag/v0.1.2
 [0.1.3]: https://github.com/nlsfi/segment-reshape-qgis-plugin/releases/tag/v0.1.3
+[0.1.4]: https://github.com/nlsfi/segment-reshape-qgis-plugin/releases/tag/v0.1.4
