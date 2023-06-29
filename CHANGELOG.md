@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Fix: add support for reshaping closed linestrings
+
 ## [0.1.4] - 2023-04-14
 
 - Feature: Change the mouse cursor to the wait cursor when finding common segment os editing is in progress

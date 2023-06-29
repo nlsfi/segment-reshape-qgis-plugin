@@ -194,6 +194,23 @@ def _reshape_geometry(
             and vertex_indices[0] == vertex_indices[-1]
         ):
             vertex_indices = vertex_indices[:-1]
+        # handle case when a full line is redrawn as closed
+        elif (
+            len(vertex_indices) > 1
+            and original.type() == QgsWkbTypes.GeometryType.LineGeometry
+            and reshape_geometry.endPoint() == reshape_geometry.startPoint()
+            and vertex_indices[0] == vertex_indices[-1]
+        ):
+            vertex_indices = vertex_indices[1:]
+            reshape_geometry = QgsLineString(list(reshape_geometry.vertices())[1:])
+        # handle case when a full line is redrawn but not closed
+        elif (
+            len(vertex_indices) > 1
+            and original.type() == QgsWkbTypes.GeometryType.LineGeometry
+            and reshape_geometry.endPoint() != reshape_geometry.startPoint()
+            and vertex_indices[0] == vertex_indices[-1]
+        ):
+            vertex_indices = vertex_indices[1:]
 
         # add vertices before the first replaced vertex
         min_vertex_index = min(vertex_indices)

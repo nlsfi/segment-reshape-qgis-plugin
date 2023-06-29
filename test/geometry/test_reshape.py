@@ -730,6 +730,26 @@ def test_edge_lines_moved_to_match_reshape(
     _assert_layer_geoms(layer1, ["LINESTRING(0 0, 2 0)", "LINESTRING(0 2, 4 4)"])
 
 
+def test_closed_line_moved_to_match_reshape(
+    preset_features_layer_factory: Callable[
+        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+    ],
+):
+    layer1, features1 = preset_features_layer_factory(
+        "l1", ["LINESTRING(0 0, 1 1, 3 3, 0 0)"]
+    )
+
+    make_reshape_edits(
+        [],
+        [
+            ReshapeEdge(layer1, features1[0], 1, is_start=False),
+        ],
+        QgsLineString([(2, 2)]),
+    )
+
+    _assert_layer_geoms(layer1, ["LINESTRING(0 0, 2 2, 3 3, 0 0)"])
+
+
 def test_edge_polygons_moved_to_match_reshape(
     preset_features_layer_factory: Callable[
         [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
@@ -1030,3 +1050,24 @@ def test_full_polygon_partially_replaced_by_reshape_auto_closed(
     )
 
     _assert_layer_geoms(layer1, ["POLYGON((1 1, 1 2, 2 2, 2 1, 1 1))"])
+
+
+def test_closed_line_fully_replaced_by_reshape(
+    preset_features_layer_factory: Callable[
+        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+    ],
+):
+    layer1, features1 = preset_features_layer_factory(
+        "l1",
+        ["LINESTRING(0 0, 0 1, 1 1, 1 0, 0 0)"],
+    )
+
+    make_reshape_edits(
+        [
+            ReshapeCommonPart(layer1, features1[0], [0, 1, 2, 3, 4], False),
+        ],
+        [],
+        QgsLineString([(2, 2), (0, 2), (3, 3), (2, 0), (2, 2)]),
+    )
+
+    _assert_layer_geoms(layer1, ["LINESTRING(2 2, 0 2, 3 3, 2 0, 2 2)"])
