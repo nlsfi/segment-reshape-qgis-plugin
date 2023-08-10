@@ -148,6 +148,11 @@ def test_calculate_common_segment_for_single_feature_picks_whole_triggered_compo
             [0, 1],
         ),
         (
+            "LINESTRING(0 0, 1 1, 0 1, 0 0)",
+            (0, 1),
+            [3, 1, 2, 3],
+        ),
+        (
             "MULTILINESTRING((0 0, 1 1), (2 2, 3 3))",
             (0, 1),
             [0, 1],
@@ -202,6 +207,7 @@ def test_calculate_common_segment_for_single_feature_picks_whole_triggered_compo
     ],
     ids=[
         "line",
+        "closed-line",
         "multiline",
         "multiline-2nd-part",
         "polygon",
@@ -403,6 +409,40 @@ def test_find_vertex_indices_raises_error_with_non_matching_geometries():
 
     with pytest.raises(ValueError):
         _find_vertex_indices(geom, segment)
+
+
+@pytest.mark.parametrize(
+    ("segment_wkt", "expected_indices"),
+    [
+        ("LineString (0 0, 0 1, 1 1, 1 0, 0 0)", [4, 1, 2, 3, 4]),
+        ("LineString (1 1, 1 0, 0 0, 0 1, 1 1)", [2, 3, 4, 1, 2]),
+    ],
+    ids=["equal-to-original", "wrap-around"],
+)
+def test_find_vertex_indices_for_closed_linestring_wraps_around_correctly(
+    segment_wkt: str, expected_indices: List[int]
+):
+    geom = QgsGeometry.fromWkt("Linestring (0 0, 0 1, 1 1, 1 0, 0 0)")
+    segment = QgsGeometry.fromWkt(segment_wkt)
+
+    assert _find_vertex_indices(geom, segment) == expected_indices
+
+
+@pytest.mark.parametrize(
+    ("segment_wkt", "expected_indices"),
+    [
+        ("LineString (0 0, 0 1, 1 1, 1 0, 0 0)", [4, 1, 2, 3, 4]),
+        ("LineString (1 1, 1 0, 0 0, 0 1, 1 1)", [2, 3, 4, 1, 2]),
+    ],
+    ids=["equal-to-original", "wrap-around"],
+)
+def test_find_vertex_indices_for_polygon_ring_wraps_around_correctly(
+    segment_wkt: str, expected_indices: List[int]
+):
+    geom = QgsGeometry.fromWkt("Polygon ((0 0, 0 1, 1 1, 1 0, 0 0))")
+    segment = QgsGeometry.fromWkt(segment_wkt)
+
+    assert _find_vertex_indices(geom, segment) == expected_indices
 
 
 @pytest.mark.parametrize(
@@ -735,6 +775,78 @@ def test_calculate_common_segment_polygon_ring_boundary_crossed(
 
     assert segment is not None
     _assert_geom_equals_wkt(segment, expected_segment_wkt)
+
+
+@pytest.mark.parametrize(
+    argnames=(
+        "trigger_wkt",
+        "trigger_indices",
+        "other_wkts",
+        "expected_segment_wkt",
+        "expected_indices",
+    ),
+    argvalues=[
+        (
+            "LINESTRING((0 0, 0 1, 1 1, 1 0, 0 0))",
+            (0, 1),
+            ["LINESTRING(1 1, 2 2)"],
+            "LINESTRING(0 0, 0 1, 1 1, 1 0, 0 0)",
+            [2, 3, 4, 1, 2],
+        ),
+        (
+            "LINESTRING((0 0, 0 1, 1 1, 1 0, 0 0))",
+            (2, 3),
+            ["LINESTRING(1 1, 2 2)"],
+            "LINESTRING(0 0, 0 1, 1 1, 1 0, 0 0)",
+            [2, 3, 4, 1, 2],
+        ),
+        (
+            "LINESTRING((0 0, 0 1, 1 1, 1 0, 0 0))",
+            (0, 1),
+            ["LINESTRING(0 1, 1 1)"],
+            "LINESTRING(1 1, 1 0, 0 0, 0 1)",
+            [2, 3, 4, 1],
+        ),
+        (
+            "LINESTRING((0 0, 0 1, 1 1, 1 0, 0 0))",
+            (3, 4),
+            ["LINESTRING(1 1, 1 0)"],
+            "LINESTRING(1 0, 0 0, 0 1, 1 1)",
+            [3, 4, 1, 2],
+        ),
+    ],
+    ids=[
+        "first-half-with-edge",
+        "second-half-with-edge",
+        "first-half-with-break",
+        "second-half-with-break",
+    ],
+)
+def test_calculate_common_segment_closed_linestring_boundary_crossed(
+    preset_features_layer_factory: Callable[
+        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+    ],
+    trigger_wkt: str,
+    trigger_indices: Tuple[int, int],
+    other_wkts: List[str],
+    expected_segment_wkt: str,
+    expected_indices: List[int],
+):
+    layer, (feature, *other_features) = preset_features_layer_factory(
+        "source", [trigger_wkt] + other_wkts
+    )
+
+    (segment, common_parts, _) = get_common_geometries(
+        layer,
+        feature,
+        [(layer, f) for f in other_features],
+        trigger_indices,
+    )
+
+    assert segment is not None
+    _assert_geom_equals_wkt(segment, expected_segment_wkt)
+
+    assert common_parts[0].vertex_indices == expected_indices
 
 
 @pytest.mark.parametrize(

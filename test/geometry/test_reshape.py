@@ -1071,3 +1071,41 @@ def test_closed_line_fully_replaced_by_reshape(
     )
 
     _assert_layer_geoms(layer1, ["LINESTRING(2 2, 0 2, 3 3, 2 0, 2 2)"])
+
+
+@pytest.mark.parametrize(
+    argnames=("indices", "reshape_wkt"),
+    argvalues=[
+        ([0, 1, 2, 3, 4], "LINESTRING(2 2, 0 2, 3 3, 2 0, 2 2)"),
+        ([4, 1, 2, 3, 4], "LINESTRING(2 2, 0 2, 3 3, 2 0, 2 2)"),
+        ([2, 3, 4, 1, 2], "LINESTRING(3 3, 2 0, 2 2, 0 2, 3 3)"),
+    ],
+    ids=[
+        "wraparound-at-origin-no-duplicate",
+        "wraparound-at-origin-duplicate-last",
+        "wraparound-at-middle",
+    ],
+)
+def test_closed_line_not_drawn_closed_still_closed_by_reshape(
+    preset_features_layer_factory: Callable[
+        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+    ],
+    indices: List[int],
+    reshape_wkt: str,
+):
+    layer1, features1 = preset_features_layer_factory(
+        "l1",
+        ["LINESTRING(0 0, 0 1, 1 1, 1 0, 0 0)"],
+    )
+
+    reshape_geom = QgsGeometry.fromWkt(reshape_wkt).constGet()
+
+    make_reshape_edits(
+        [
+            ReshapeCommonPart(layer1, features1[0], indices, False),
+        ],
+        [],
+        reshape_geom,
+    )
+
+    _assert_layer_geoms(layer1, [reshape_wkt])
