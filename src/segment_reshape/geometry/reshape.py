@@ -231,6 +231,33 @@ def _reshape_geometry(
                     (vertices := list(reshape_geometry.vertices())) + vertices[:1]
                 )
 
+        # handle case when a closed linestring in partially reshaped in a way that
+        # the part origin wraparound falls inside the target vertex indices as
+        # indicated by a gap in the otherwise continuous vertex indices
+        elif (
+            original.type() == QgsWkbTypes.GeometryType.LineGeometry
+            and len(vertex_indices) > 1
+            and any(
+                abs(first - second) > 1
+                for first, second in zip(vertex_indices[:-1], vertex_indices[1:])
+            )
+        ):
+            # reshape will scroll the origin to be located at the start
+            # of the reshape segment, to match the ends at the new position make
+            # the wraparound vertex of the list the part minimum instead of the
+            # part maximum (to insert the reshape as the start of the part), and
+            # move the part maximum index to the start of the reshape to match
+            # the new origin
+            min_index, max_index = min(vertex_indices), max(vertex_indices)
+            vertex_indices = [
+                (min_index - 1 if i == max_index else i) for i in vertex_indices
+            ]
+            if not new.moveVertex(reshape_geometry.startPoint(), max_index):
+                raise GeometryTransformationError(
+                    f"could not move vertex {max_index}"
+                    f" on {new} to {reshape_geometry.startPoint()}"
+                )
+
         # add vertices before the first replaced vertex
         min_vertex_index = min(vertex_indices)
         for new_vertex_index, new_vertex in enumerate(reshape_geometry.vertices()):

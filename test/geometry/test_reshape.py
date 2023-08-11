@@ -1109,3 +1109,65 @@ def test_closed_line_not_drawn_closed_still_closed_by_reshape(
     )
 
     _assert_layer_geoms(layer1, [reshape_wkt])
+
+
+@pytest.mark.parametrize(
+    argnames=("original", "indices", "reshape", "result"),
+    argvalues=[
+        (
+            "LINESTRING(0 0, 0 1, 1 1, 1 0, 0 0)",
+            [3, 4, 1, 2],
+            "LINESTRING(2 0, -1 -1, 0 2, 2 2)",
+            "LINESTRING(-1 -1, 0 2, 2 2, 2 0, -1 -1)",
+        ),
+        (
+            "LINESTRING(0 0, 0 1, 1 1, 1 0, 0 0)",
+            [4, 1],
+            "LINESTRING(-1 -1, 0 2)",
+            "LINESTRING(-1 -1, 0 2, 1 1, 1 0, -1 -1)",
+        ),
+        (
+            "LINESTRING(0 0, 0 1, 1 1, 1 0, 0 0)",
+            [3, 4, 1, 2],
+            "LINESTRING(2 0, 1 0, -1 -1, 0 1, 0 2, 2 2)",
+            "LINESTRING(-1 -1, 0 1, 0 2, 2 2, 2 0, 1 0, -1 -1)",
+        ),
+        (
+            "LINESTRING(0 0, 0 1, 1 1, 1 0, 0 0)",
+            [4, 1],
+            "LINESTRING(-1 -1, 0 1, 0 2)",
+            "LINESTRING(-1 -1, 0 1, 0 2, 1 1, 1 0, -1 -1)",
+        ),
+    ],
+    ids=[
+        "one-segment-not-common-same-count",
+        "one-segment-common-same-count",
+        "one-segment-not-common-diffrent-count",
+        "one-segment-common-diffrent-count",
+    ],
+)
+def test_wraparound_closed_linestring_partially_reshaped(
+    preset_features_layer_factory: Callable[
+        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+    ],
+    original: str,
+    indices: List[int],
+    reshape: str,
+    result: str,
+):
+    layer, (feature,) = preset_features_layer_factory(
+        "l1",
+        [original],
+    )
+
+    reshape_geom = QgsGeometry.fromWkt(reshape).constGet()
+
+    make_reshape_edits(
+        [
+            ReshapeCommonPart(layer, feature, indices, False),
+        ],
+        [],
+        reshape_geom,
+    )
+
+    _assert_layer_geoms(layer, [result])
