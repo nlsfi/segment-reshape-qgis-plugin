@@ -28,6 +28,7 @@ from qgis.core import (
     QgsLineString,
     QgsPoint,
     QgsVectorLayer,
+    QgsVertexId,
     QgsWkbTypes,
 )
 
@@ -197,7 +198,13 @@ def _reshape_geometry(
             # without explicitly closing the geometry, similary to target indices
             # can just omit the last reshape geometry vertex if it was closed
             if reshape_geometry.isClosed():
-                reshape_geometry = QgsLineString(list(reshape_geometry.vertices())[:-1])
+                reshape_geometry = reshape_geometry.clone()
+                if not reshape_geometry.deleteVertex(
+                    QgsVertexId(0, 0, reshape_geometry.vertexCount(0, 0) - 1)
+                ):
+                    raise GeometryTransformationError(
+                        f"could not delete last vertex on {reshape_geometry}"
+                    )
 
         # handle the case when a full closed linestring in reshaped
         elif (
@@ -227,9 +234,8 @@ def _reshape_geometry(
             # always require closed reshape geometries for closed origin geometries,
             # so that its an error to reshape a polygon ring without closing it?
             if not reshape_geometry.isClosed():
-                reshape_geometry = QgsLineString(
-                    (vertices := list(reshape_geometry.vertices())) + vertices[:1]
-                )
+                reshape_geometry = reshape_geometry.clone()
+                reshape_geometry.close()
 
         # handle case when a closed linestring in partially reshaped in a way that
         # the part origin wraparound falls inside the target vertex indices as
