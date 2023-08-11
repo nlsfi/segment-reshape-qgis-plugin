@@ -2,7 +2,8 @@
 
 ## Unreleased
 
-- Fix: add support for reshaping closed linestrings
+- Fix: Add support for reshaping closed linestrings
+- Fix: Add support for reshaping closed linestring partially, when the reshaped segment falls on the wraparound location
 
 ## [0.1.4] - 2023-04-14
 
