@@ -1093,22 +1093,23 @@ def test_closed_line_not_drawn_closed_still_closed_by_reshape(
     indices: List[int],
     reshape_wkt: str,
 ):
-    layer1, features1 = preset_features_layer_factory(
+    layer, (feature,) = preset_features_layer_factory(
         "l1",
         ["LINESTRING(0 0, 0 1, 1 1, 1 0, 0 0)"],
     )
 
-    reshape_geom = QgsGeometry.fromWkt(reshape_wkt).constGet()
+    reshape_geom = QgsLineString()
+    assert reshape_geom.fromWkt(reshape_wkt)
 
     make_reshape_edits(
         [
-            ReshapeCommonPart(layer1, features1[0], indices, False),
+            ReshapeCommonPart(layer, feature, indices, False),
         ],
         [],
         reshape_geom,
     )
 
-    _assert_layer_geoms(layer1, [reshape_wkt])
+    _assert_layer_geoms(layer, [reshape_wkt])
 
 
 @pytest.mark.parametrize(
@@ -1160,7 +1161,8 @@ def test_wraparound_closed_linestring_partially_reshaped(
         [original],
     )
 
-    reshape_geom = QgsGeometry.fromWkt(reshape).constGet()
+    reshape_geom = QgsLineString()
+    assert reshape_geom.fromWkt(reshape)
 
     make_reshape_edits(
         [
