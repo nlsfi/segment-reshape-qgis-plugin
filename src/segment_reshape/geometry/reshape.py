@@ -177,40 +177,59 @@ def _reshape_geometry(
                 )
 
     else:
-        # handle case when a full polygon is redrawn as closed
+        # since the indices are always the longest continuous segment on
+        # the origin geometry, if the indices wrap around also at the index
+        # list start/end, its known to be a closed geometry
+
+        # handle the case when a full polygon ring is reshaped
         if (
-            len(vertex_indices) > 1
-            and original.type() == QgsWkbTypes.GeometryType.PolygonGeometry
-            and reshape_geometry.endPoint() == reshape_geometry.startPoint()
+            original.type() == QgsWkbTypes.GeometryType.PolygonGeometry
+            and len(vertex_indices) > 1
             and vertex_indices[0] == vertex_indices[-1]
         ):
+            # can just omit the last vertex from target indices since it will
+            # either be a mid-ring index duplicated, or the polygon ring origin index
+            # (first/last, which will be automatically matched even without explicitly
+            # moving both indices)
             vertex_indices = vertex_indices[:-1]
-            reshape_geometry = QgsLineString(list(reshape_geometry.vertices())[:-1])
-        # handle case when a full polygon is redrawn but not closed
+
+            # support reshape both with a fully redrawn closed geometry, and even
+            # without explicitly closing the geometry, similary to target indices
+            # can just omit the last reshape geometry vertex if it was closed
+            if reshape_geometry.isClosed():
+                reshape_geometry = QgsLineString(list(reshape_geometry.vertices())[:-1])
+
+        # handle the case when a full closed linestring in reshaped
         elif (
-            len(vertex_indices) > 1
-            and original.type() == QgsWkbTypes.GeometryType.PolygonGeometry
-            and reshape_geometry.endPoint() != reshape_geometry.startPoint()
+            original.type() == QgsWkbTypes.GeometryType.LineGeometry
+            and len(vertex_indices) > 1
             and vertex_indices[0] == vertex_indices[-1]
         ):
-            vertex_indices = vertex_indices[:-1]
-        # handle case when a full line is redrawn as closed
-        elif (
-            len(vertex_indices) > 1
-            and original.type() == QgsWkbTypes.GeometryType.LineGeometry
-            and reshape_geometry.endPoint() == reshape_geometry.startPoint()
-            and vertex_indices[0] == vertex_indices[-1]
-        ):
-            vertex_indices = vertex_indices[1:]
-            reshape_geometry = QgsLineString(list(reshape_geometry.vertices())[1:])
-        # handle case when a full line is redrawn but not closed
-        elif (
-            len(vertex_indices) > 1
-            and original.type() == QgsWkbTypes.GeometryType.LineGeometry
-            and reshape_geometry.endPoint() != reshape_geometry.startPoint()
-            and vertex_indices[0] == vertex_indices[-1]
-        ):
-            vertex_indices = vertex_indices[1:]
+            # handle wraparound at origin by simply using the correct start index
+            # instead of duplicating the max vertex index at the first index
+            if vertex_indices[0] == max(vertex_indices):
+                vertex_indices[0] = min(vertex_indices) - 1
+
+            # handle wraparound at non-origin by simply rewriting the indices as if
+            # the origin was at the new reshape geometry origin. this will essentially
+            # scroll origin along the original geometryto the reshape start location,
+            # assume this is not an issue since there was nothing connected at the
+            # previous origin and something was connected at the new origin
+            else:
+                vertex_indices = list(
+                    range(min(vertex_indices) - 1, max(vertex_indices) + 1)
+                )
+
+            # similarly to polygon rings support the reshape even without closing the
+            # reshape geometry, by closing the reshape geometry manually here
+            # NOTE: this way the code will never break closed linestring geometries,
+            # even if that is what is wanted. TODO: possibly change this logic to
+            # always require closed reshape geometries for closed origin geometries,
+            # so that its an error to reshape a polygon ring without closing it?
+            if not reshape_geometry.isClosed():
+                reshape_geometry = QgsLineString(
+                    (vertices := list(reshape_geometry.vertices())) + vertices[:1]
+                )
 
         # add vertices before the first replaced vertex
         min_vertex_index = min(vertex_indices)
@@ -221,6 +240,7 @@ def _reshape_geometry(
                     f"could not insert {new_vertex} vertex"
                     f" before {add_before_index} on {new}"
                 )
+
         # delete replace vertices that were moved by the added count in reverse order
         added_vertex_count = reshape_geometry.vertexCount()
         for original_delete_index in sorted(vertex_indices, reverse=True):
