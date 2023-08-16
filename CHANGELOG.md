@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## Unreleased
+## [0.1.5] - 2023-08-16
 
 - Fix: Add support for reshaping closed linestrings
 - Fix: Add support for reshaping closed linestring partially, when the reshaped segment falls on the wraparound location
@@ -54,3 +54,4 @@
 [0.1.2]: https://github.com/nlsfi/segment-reshape-qgis-plugin/releases/tag/v0.1.2
 [0.1.3]: https://github.com/nlsfi/segment-reshape-qgis-plugin/releases/tag/v0.1.3
 [0.1.4]: https://github.com/nlsfi/segment-reshape-qgis-plugin/releases/tag/v0.1.4
+[0.1.5]: https://github.com/nlsfi/segment-reshape-qgis-plugin/releases/tag/v0.1.5
