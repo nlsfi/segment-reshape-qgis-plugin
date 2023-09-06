@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- update author email
+
 ## [0.1.5] - 2023-08-16
 
 - Fix: Add support for reshaping closed linestrings
