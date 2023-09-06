@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## Unreleased
+## [0.1.6] - 2023-09-06
 
 - update author email
 
@@ -59,3 +59,4 @@
 [0.1.3]: https://github.com/nlsfi/segment-reshape-qgis-plugin/releases/tag/v0.1.3
 [0.1.4]: https://github.com/nlsfi/segment-reshape-qgis-plugin/releases/tag/v0.1.4
 [0.1.5]: https://github.com/nlsfi/segment-reshape-qgis-plugin/releases/tag/v0.1.5
+[0.1.6]: https://github.com/nlsfi/segment-reshape-qgis-plugin/releases/tag/v0.1.6
