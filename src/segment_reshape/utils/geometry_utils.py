@@ -18,7 +18,8 @@
 #  along with segment-reshape-qgis-plugin. If not, see <https://www.gnu.org/licenses/>.
 
 
-from typing import Iterator, Tuple, Union
+from collections.abc import Iterator
+from typing import Union
 
 from qgis.core import QgsAbstractGeometry, QgsGeometry, QgsPoint
 
@@ -35,7 +36,7 @@ def clone_geometry_safely(
         return QgsGeometry(cloned_original_abstract_geometry)
 
 
-def vertices(geometry: QgsGeometry) -> Iterator[Tuple[int, QgsPoint]]:
+def vertices(geometry: QgsGeometry) -> Iterator[tuple[int, QgsPoint]]:
     """Generator for vertex_ids and vertices of the geometry
 
     Args:
@@ -45,5 +46,4 @@ def vertices(geometry: QgsGeometry) -> Iterator[Tuple[int, QgsPoint]]:
         Iterator[Tuple[int, QgsPoint]]: Tuple contains vertex_id and vertex point
     """
 
-    for vertex_id, vertex in enumerate(geometry.vertices()):
-        yield (vertex_id, vertex)
+    yield from enumerate(geometry.vertices())

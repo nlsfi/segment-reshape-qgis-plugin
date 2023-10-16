@@ -25,8 +25,7 @@ if TYPE_CHECKING:
     from qgis.gui import QgisInterface
 
 
-def classFactory(  # noqa: N802 (qgis naming)
+def classFactory(  # (qgis naming)
     iface: "QgisInterface",
 ) -> SegmentReshapePlugin:
-
     return SegmentReshapePlugin()

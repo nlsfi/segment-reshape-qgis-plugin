@@ -17,10 +17,11 @@
 #  You should have received a copy of the GNU General Public License
 #  along with segment-reshape-qgis-plugin. If not, see <https://www.gnu.org/licenses/>.
 
+from collections.abc import Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass
-from typing import Dict, Iterator, List, Set, Tuple, Union
+from typing import Union
 
 from qgis.core import (
     QgsFeature,
@@ -43,7 +44,7 @@ class GeometryTransformationError(Exception):
 class ReshapeCommonPart:
     layer: QgsVectorLayer
     feature: QgsFeature
-    vertex_indices: List[int]
+    vertex_indices: list[int]
     is_reversed: bool
     """
     Indicates if this feature's geometry is digitized
@@ -63,16 +64,16 @@ class ReshapeEdge:
     """
 
 
-_current_edit_command_layers: ContextVar[List[QgsVectorLayer]] = ContextVar(
+_current_edit_command_layers: ContextVar[list[QgsVectorLayer]] = ContextVar(
     "current_edit_command_layers"
 )
-_set_editable_layer_ids: ContextVar[Set[str]] = ContextVar("set_editable_layer_ids")
+_set_editable_layer_ids: ContextVar[set[str]] = ContextVar("set_editable_layer_ids")
 
 
 @contextmanager
 def _wrap_all_edit_commands() -> Iterator[None]:
-    layers: List[QgsVectorLayer] = []
-    set_editable_ids: Set[str] = set()
+    layers: list[QgsVectorLayer] = []
+    set_editable_ids: set[str] = set()
     token = _current_edit_command_layers.set(layers)
     editable_ids_token = _set_editable_layer_ids.set(set_editable_ids)
     try:
@@ -104,8 +105,8 @@ def _set_editable_and_begin_edit_command_once(layer: QgsVectorLayer) -> None:
 
 
 def make_reshape_edits(
-    common_parts: List[ReshapeCommonPart],
-    edges: List[ReshapeEdge],
+    common_parts: list[ReshapeCommonPart],
+    edges: list[ReshapeEdge],
     reshape_geometry: Union[QgsPoint, QgsLineString],
 ) -> None:
     """
@@ -134,7 +135,7 @@ def make_reshape_edits(
 
 
 def _reshape_common_parts(
-    common_parts: List[ReshapeCommonPart],
+    common_parts: list[ReshapeCommonPart],
     reshape_geometry: Union[QgsPoint, QgsLineString],
 ) -> None:
     for common_part in common_parts:
@@ -156,9 +157,9 @@ def _reshape_common_parts(
         )
 
 
-def _reshape_geometry(
+def _reshape_geometry(  # noqa: C901, PLR0912
     original: QgsGeometry,
-    vertex_indices: List[int],
+    vertex_indices: list[int],
     reshape_geometry: Union[QgsPoint, QgsLineString],
 ) -> QgsGeometry:
     new = clone_geometry_safely(original)
@@ -287,11 +288,11 @@ def _reshape_geometry(
 
 
 def _move_edges(
-    edges: List[ReshapeEdge], new_start: QgsPoint, new_end: QgsPoint
+    edges: list[ReshapeEdge], new_start: QgsPoint, new_end: QgsPoint
 ) -> None:
     # hold on to the updates so next iteration for same feature
     # uses the previous updated geometry instead of initial geometry
-    previously_updated_geoms: Dict[Tuple[str, int], QgsGeometry] = {}
+    previously_updated_geoms: dict[tuple[str, int], QgsGeometry] = {}
 
     for edge in edges:
         _set_editable_and_begin_edit_command_once(edge.layer)

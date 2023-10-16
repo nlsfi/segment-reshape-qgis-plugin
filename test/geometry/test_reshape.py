@@ -17,12 +17,11 @@
 #  You should have received a copy of the GNU General Public License
 #  along with segment-reshape-qgis-plugin. If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Callable, List, Tuple
+from typing import Callable
 
 import pytest
 from pytest_mock import MockerFixture
 from qgis.core import QgsFeature, QgsGeometry, QgsLineString, QgsPoint, QgsVectorLayer
-
 from segment_reshape.geometry.reshape import (
     GeometryTransformationError,
     ReshapeCommonPart,
@@ -37,7 +36,7 @@ def _normalize_wkt(wkt: str) -> str:
     return g.asWkt()
 
 
-def _assert_layer_geoms(layer: QgsVectorLayer, expected_geom_wkts: List[str]):
+def _assert_layer_geoms(layer: QgsVectorLayer, expected_geom_wkts: list[str]):
     __tracebackhide__ = True
 
     layer_wkts = [_normalize_wkt(f.geometry().asWkt()) for f in layer.getFeatures()]
@@ -48,7 +47,7 @@ def _assert_layer_geoms(layer: QgsVectorLayer, expected_geom_wkts: List[str]):
 
 def test_editing_enabled_for_non_editable_layers(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ]
 ):
     layer1, features1 = preset_features_layer_factory("l1", ["LINESTRING(0 0, 1 1)"])
@@ -72,7 +71,7 @@ def test_editing_enabled_for_non_editable_layers(
 
 def test_edits_made_in_single_edit_command_for_each_layer(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ]
 ):
     layer1, features1 = preset_features_layer_factory(
@@ -101,7 +100,7 @@ def test_edits_made_in_single_edit_command_for_each_layer(
 
 def test_existing_edit_command_allowed_without_modifications(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ]
 ):
     layer1, features1 = preset_features_layer_factory(
@@ -135,7 +134,7 @@ def test_existing_edit_command_allowed_without_modifications(
 
 def test_edit_commands_for_editable_layers_removed_on_error(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ],
     mocker: MockerFixture,
 ):
@@ -176,7 +175,7 @@ def test_edit_commands_for_editable_layers_removed_on_error(
 
 def test_non_editable_layer_rolled_back_on_error(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ],
     mocker: MockerFixture,
 ):
@@ -210,7 +209,7 @@ def test_non_editable_layer_rolled_back_on_error(
 
 def test_existing_edit_command_not_removed_on_error(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ],
     mocker: MockerFixture,
 ):
@@ -251,7 +250,7 @@ def test_existing_edit_command_not_removed_on_error(
 
 def test_edits_applied_to_layer_features(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ]
 ):
     layer1, features1 = preset_features_layer_factory("l1", ["LINESTRING(0 0, 1 1)"])
@@ -272,7 +271,7 @@ def test_edits_applied_to_layer_features(
 
 def test_reshape_with_invalid_indices_fails(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ]
 ):
     layer1, features1 = preset_features_layer_factory("l1", ["LINESTRING(0 0, 1 1)"])
@@ -289,7 +288,7 @@ def test_reshape_with_invalid_indices_fails(
 
 def test_common_point_reshaped(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ]
 ):
     layer1, features1 = preset_features_layer_factory("l1", ["POINT(0 0)"])
@@ -307,7 +306,7 @@ def test_common_point_reshaped(
 
 def test_common_point_reshaped_by_line_fails(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ]
 ):
     layer1, features1 = preset_features_layer_factory("l1", ["POINT(0 0)"])
@@ -324,7 +323,7 @@ def test_common_point_reshaped_by_line_fails(
 
 def test_common_multipoint_reshaped(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ]
 ):
     layer1, features1 = preset_features_layer_factory(
@@ -344,7 +343,7 @@ def test_common_multipoint_reshaped(
 
 def test_common_multipoint_reshaped_by_line_from_multiple_vertices(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ]
 ):
     layer1, features1 = preset_features_layer_factory(
@@ -364,7 +363,7 @@ def test_common_multipoint_reshaped_by_line_from_multiple_vertices(
 
 def test_common_multipoint_reshaped_by_line_from_single_vertex(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ]
 ):
     layer1, features1 = preset_features_layer_factory(
@@ -447,11 +446,11 @@ def test_common_multipoint_reshaped_by_line_from_single_vertex(
 )
 def test_common_line_segment_reshaped(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ],
     input_wkt: str,
     reshape_wkt: str,
-    indices: List[int],
+    indices: list[int],
     expected_wkt: str,
 ):
     layer1, features1 = preset_features_layer_factory("l1", [input_wkt])
@@ -490,11 +489,11 @@ def test_common_line_segment_reshaped(
 )
 def test_common_multiline_segment_reshaped(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ],
     input_wkt: str,
     reshape_wkt: str,
-    indices: List[int],
+    indices: list[int],
     expected_wkt: str,
 ):
     layer1, features1 = preset_features_layer_factory("l1", [input_wkt])
@@ -564,11 +563,11 @@ def test_common_multiline_segment_reshaped(
 )
 def test_common_polygon_segment_reshaped(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ],
     input_wkt: str,
     reshape_wkt: str,
-    indices: List[int],
+    indices: list[int],
     expected_wkt: str,
 ):
     layer1, features1 = preset_features_layer_factory("l1", [input_wkt])
@@ -603,11 +602,11 @@ def test_common_polygon_segment_reshaped(
 )
 def test_common_multipolygon_segment_reshaped(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ],
     input_wkt: str,
     reshape_wkt: str,
-    indices: List[int],
+    indices: list[int],
     expected_wkt: str,
 ):
     layer1, features1 = preset_features_layer_factory("l1", [input_wkt])
@@ -628,7 +627,7 @@ def test_common_multipolygon_segment_reshaped(
 
 def test_reversed_common_line_segment_reshaped_in_correct_order(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ],
 ):
     layer1, features1 = preset_features_layer_factory(
@@ -648,7 +647,7 @@ def test_reversed_common_line_segment_reshaped_in_correct_order(
 
 def test_reversed_common_polygon_segment_reshaped_in_correct_order(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ],
 ):
     layer1, features1 = preset_features_layer_factory(
@@ -668,7 +667,7 @@ def test_reversed_common_polygon_segment_reshaped_in_correct_order(
 
 def test_reversed_common_polygon_segment_reshaped_in_correct_order_with_wraparound(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ],
 ):
     layer1, features1 = preset_features_layer_factory(
@@ -690,7 +689,7 @@ def test_reversed_common_polygon_segment_reshaped_in_correct_order_with_wraparou
 
 def test_edge_points_moved_to_match_reshape(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ],
 ):
     layer1, features1 = preset_features_layer_factory(
@@ -711,7 +710,7 @@ def test_edge_points_moved_to_match_reshape(
 
 def test_edge_lines_moved_to_match_reshape(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ],
 ):
     layer1, features1 = preset_features_layer_factory(
@@ -732,7 +731,7 @@ def test_edge_lines_moved_to_match_reshape(
 
 def test_closed_line_moved_to_match_reshape(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ],
 ):
     layer1, features1 = preset_features_layer_factory(
@@ -752,7 +751,7 @@ def test_closed_line_moved_to_match_reshape(
 
 def test_edge_polygons_moved_to_match_reshape(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ],
 ):
     layer1, features1 = preset_features_layer_factory(
@@ -777,7 +776,7 @@ def test_edge_polygons_moved_to_match_reshape(
 
 def test_edge_polygon_with_both_start_and_end_moved_to_match_reshape(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ],
 ):
     layer1, features1 = preset_features_layer_factory(
@@ -802,7 +801,7 @@ def test_edge_polygon_with_both_start_and_end_moved_to_match_reshape(
 
 def test_line_segment_collapsed_to_single_point(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ],
 ):
     layer1, features1 = preset_features_layer_factory(
@@ -826,7 +825,7 @@ def test_line_segment_collapsed_to_single_point(
 
 def test_polygon_segment_collapsed_to_single_point(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ],
 ):
     layer1, features1 = preset_features_layer_factory(
@@ -850,7 +849,7 @@ def test_polygon_segment_collapsed_to_single_point(
 
 def test_polygon_segment_collapsed_to_single_point_with_wraparound(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ],
 ):
     layer1, features1 = preset_features_layer_factory(
@@ -874,7 +873,7 @@ def test_polygon_segment_collapsed_to_single_point_with_wraparound(
 
 def test_multipolygon_segment_collapsed_to_single_point_with_wraparound(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ],
 ):
     layer1, features1 = preset_features_layer_factory(
@@ -900,7 +899,7 @@ def test_multipolygon_segment_collapsed_to_single_point_with_wraparound(
 
 def test_segment_collaped_to_single_point_edges_joined(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ],
 ):
     layer1, features1 = preset_features_layer_factory(
@@ -956,7 +955,7 @@ def test_segment_collaped_to_single_point_edges_joined(
 
 def test_line_segment_expanded_from_single_vertex(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ],
 ):
     layer1, features1 = preset_features_layer_factory(
@@ -977,7 +976,7 @@ def test_line_segment_expanded_from_single_vertex(
 
 def test_polygon_segment_expanded_from_single_vertex(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ],
 ):
     layer1, features1 = preset_features_layer_factory(
@@ -1000,7 +999,7 @@ def test_polygon_segment_expanded_from_single_vertex(
 
 def test_polygon_fully_replaced_by_reshape(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ],
 ):
     layer1, features1 = preset_features_layer_factory(
@@ -1033,7 +1032,7 @@ def test_polygon_fully_replaced_by_reshape(
 
 def test_full_polygon_partially_replaced_by_reshape_auto_closed(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ],
 ):
     layer1, features1 = preset_features_layer_factory(
@@ -1054,7 +1053,7 @@ def test_full_polygon_partially_replaced_by_reshape_auto_closed(
 
 def test_closed_line_fully_replaced_by_reshape(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ],
 ):
     layer1, features1 = preset_features_layer_factory(
@@ -1088,9 +1087,9 @@ def test_closed_line_fully_replaced_by_reshape(
 )
 def test_closed_line_not_drawn_closed_still_closed_by_reshape(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ],
-    indices: List[int],
+    indices: list[int],
     reshape_wkt: str,
 ):
     layer, (feature,) = preset_features_layer_factory(
@@ -1149,10 +1148,10 @@ def test_closed_line_not_drawn_closed_still_closed_by_reshape(
 )
 def test_wraparound_closed_linestring_partially_reshaped(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ],
     original: str,
-    indices: List[int],
+    indices: list[int],
     reshape: str,
     result: str,
 ):

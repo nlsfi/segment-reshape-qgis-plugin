@@ -17,11 +17,10 @@
 #  You should have received a copy of the GNU General Public License
 #  along with segment-reshape-qgis-plugin. If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Callable, List, Tuple
+from typing import Callable
 
 import pytest
 from qgis.core import QgsFeature, QgsGeometry, QgsLineString, QgsProject, QgsVectorLayer
-
 from segment_reshape.geometry.reshape import make_reshape_edits
 from segment_reshape.topology.find_related import find_segment_to_reshape
 
@@ -32,7 +31,7 @@ def _normalize_wkt(wkt: str) -> str:
     return g.asWkt()
 
 
-def _assert_layer_geoms(layer: QgsVectorLayer, expected_geom_wkts: List[str]):
+def _assert_layer_geoms(layer: QgsVectorLayer, expected_geom_wkts: list[str]):
     __tracebackhide__ = True
 
     layer_wkts = [_normalize_wkt(f.geometry().asWkt()) for f in layer.getFeatures()]
@@ -41,7 +40,7 @@ def _assert_layer_geoms(layer: QgsVectorLayer, expected_geom_wkts: List[str]):
     assert layer_wkts == expected_wkts
 
 
-@pytest.mark.usefixtures("qgis_new_project", "use_topological_editing")
+@pytest.mark.usefixtures("qgis_new_project", "_use_topological_editing")
 @pytest.mark.parametrize(
     argnames="edited_feature_name",
     argvalues=["base", "hole"],
@@ -49,7 +48,7 @@ def _assert_layer_geoms(layer: QgsVectorLayer, expected_geom_wkts: List[str]):
 )
 def test_polygon_hole_filled_with_other_polygon_same_layer_both_reshaped(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ],
     edited_feature_name: str,
 ):
@@ -89,7 +88,7 @@ def test_polygon_hole_filled_with_other_polygon_same_layer_both_reshaped(
     )
 
 
-@pytest.mark.usefixtures("qgis_new_project", "use_topological_editing")
+@pytest.mark.usefixtures("qgis_new_project", "_use_topological_editing")
 @pytest.mark.parametrize(
     argnames="edited_feature_name",
     argvalues=["base", "hole"],
@@ -97,7 +96,7 @@ def test_polygon_hole_filled_with_other_polygon_same_layer_both_reshaped(
 )
 def test_polygon_hole_filled_with_other_polygon_other_layer_both_reshaped(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ],
     edited_feature_name: str,
 ):
@@ -148,7 +147,7 @@ def test_polygon_hole_filled_with_other_polygon_other_layer_both_reshaped(
     )
 
 
-@pytest.mark.usefixtures("qgis_new_project", "use_topological_editing")
+@pytest.mark.usefixtures("qgis_new_project", "_use_topological_editing")
 @pytest.mark.parametrize(
     argnames="edited_feature_name",
     argvalues=["base", "hole"],
@@ -156,7 +155,7 @@ def test_polygon_hole_filled_with_other_polygon_other_layer_both_reshaped(
 )
 def test_polygon_hole_filled_with_closed_linestring_both_reshaped(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ],
     edited_feature_name: str,
 ):
@@ -207,7 +206,7 @@ def test_polygon_hole_filled_with_closed_linestring_both_reshaped(
     )
 
 
-@pytest.mark.usefixtures("qgis_new_project", "use_topological_editing")
+@pytest.mark.usefixtures("qgis_new_project", "_use_topological_editing")
 @pytest.mark.parametrize(
     argnames="edited_feature_name",
     argvalues=["base", "hole1", "hole2", "hole3"],
@@ -220,7 +219,7 @@ def test_polygon_hole_filled_with_closed_linestring_both_reshaped(
 )
 def test_polygon_hole_filled_by_multiple_features_all_reshaped(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ],
     edited_feature_name: str,
 ):
@@ -294,7 +293,7 @@ def test_polygon_hole_filled_by_multiple_features_all_reshaped(
     )
 
 
-@pytest.mark.usefixtures("qgis_new_project", "use_topological_editing")
+@pytest.mark.usefixtures("qgis_new_project", "_use_topological_editing")
 @pytest.mark.parametrize(
     argnames="edited_feature_name",
     argvalues=["base", "hole"],
@@ -302,7 +301,7 @@ def test_polygon_hole_filled_by_multiple_features_all_reshaped(
 )
 def test_polygon_hole_filled_partially_with_other_polygon_both_reshaped(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ],
     edited_feature_name: str,
 ):
@@ -340,7 +339,7 @@ def test_polygon_hole_filled_partially_with_other_polygon_both_reshaped(
     )
 
 
-@pytest.mark.usefixtures("qgis_new_project", "use_topological_editing")
+@pytest.mark.usefixtures("qgis_new_project", "_use_topological_editing")
 @pytest.mark.parametrize(
     argnames="edited_feature_name",
     argvalues=["base", "hole"],
@@ -348,7 +347,7 @@ def test_polygon_hole_filled_partially_with_other_polygon_both_reshaped(
 )
 def test_polygon_hole_bordered_partially_with_linestring_both_reshaped(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ],
     edited_feature_name: str,
 ):

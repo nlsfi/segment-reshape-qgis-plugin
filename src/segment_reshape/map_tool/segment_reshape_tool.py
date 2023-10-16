@@ -18,14 +18,12 @@
 #  along with segment-reshape-qgis-plugin. If not, see <https://www.gnu.org/licenses/>.
 
 import logging
+from collections.abc import Generator, Iterator
 from contextlib import contextmanager
 from enum import Enum, IntEnum
 from typing import (
     TYPE_CHECKING,
-    Generator,
-    Iterator,
     Optional,
-    Tuple,
     Union,
     cast,
     overload,
@@ -115,7 +113,7 @@ class SegmentReshapeToolHandler(QgsAbstractMapToolHandler):
     def __init__(self, tool: "SegmentReshapeTool", action: "QAction") -> None:
         super().__init__(tool, action)
 
-    def isCompatibleWithLayer(  # noqa: N802
+    def isCompatibleWithLayer(
         self, layer: "QgsMapLayer", context: QgsAbstractMapToolHandler.Context
     ) -> bool:
         return isinstance(layer, QgsVectorLayer) and layer.geometryType() in (
@@ -185,7 +183,7 @@ class SegmentReshapeTool(QgsMapToolCapture):
         start_point = self.old_segment_rubber_band.getPoint(0, 0)
         self.start_point_indicator_rubber_band.addPoint(start_point, True)
 
-    def keyPressEvent(self, key_event: QKeyEvent) -> None:  # noqa: N802
+    def keyPressEvent(self, key_event: QKeyEvent) -> None:
         point_count = self.size()
         super().keyPressEvent(key_event)  # handle normal undo and cancel procedures
         if self._tool_mode == ToolMode.RESHAPE:
@@ -203,31 +201,27 @@ class SegmentReshapeTool(QgsMapToolCapture):
                 )
 
     @overload
-    def addVertex(self, point: QgsPointXY) -> int:  # noqa: N802
+    def addVertex(self, point: QgsPointXY) -> int:
         ...
 
     @overload
-    def addVertex(  # noqa: N802
-        self, mapPoint: QgsPointXY, match: QgsPointLocator.Match  # noqa: N803
-    ) -> int:
+    def addVertex(self, mapPoint: QgsPointXY, match: QgsPointLocator.Match) -> int:
         ...
 
-    def addVertex(self, *args, **kwargs) -> int:  # noqa: N802
+    def addVertex(self, *args, **kwargs) -> int:
         result = super().addVertex(*args, **kwargs)
         self.start_point_indicator_rubber_band.hide()
         return result
 
     @log_if_fails
-    def canvasReleaseEvent(self, mouse_event: QgsMapMouseEvent) -> None:  # noqa: N802
+    def canvasReleaseEvent(self, mouse_event: QgsMapMouseEvent) -> None:
         if self._tool_mode == ToolMode.PICK_SEGMENT:
             if mouse_event.button() == Qt.LeftButton:
                 self._handle_pick_segment_left_click(mouse_event.mapPoint())
             return
         super().canvasReleaseEvent(mouse_event)
 
-    def cadCanvasReleaseEvent(  # noqa: N802
-        self, mouse_event: QgsMapMouseEvent
-    ) -> None:
+    def cadCanvasReleaseEvent(self, mouse_event: QgsMapMouseEvent) -> None:
         """Override of the QgsMapToolAdvancedDigitizing.cadCanvasReleaseEvent
 
         This will receive adapted events from the cad system whenever a
@@ -252,7 +246,7 @@ class SegmentReshapeTool(QgsMapToolCapture):
             elif mouse_event.button() == Qt.RightButton:
                 self._handle_reshape_right_click()
 
-    def cadCanvasMoveEvent(self, mouse_event: QgsMapMouseEvent) -> None:  # noqa: N802
+    def cadCanvasMoveEvent(self, mouse_event: QgsMapMouseEvent) -> None:
         if self._tool_mode == ToolMode.RESHAPE and self.size() == 0:
             self.start_point_indicator_rubber_band.movePoint(mouse_event.mapPoint())
         return super().cadCanvasMoveEvent(mouse_event)
@@ -305,7 +299,7 @@ class SegmentReshapeTool(QgsMapToolCapture):
 
     def _find_common_segment(
         self, location: QgsPointXY
-    ) -> Tuple[Optional[QgsLineString], Optional[QgsVectorLayer]]:
+    ) -> tuple[Optional[QgsLineString], Optional[QgsVectorLayer]]:
         LOGGER.info("Calculating common segment")
 
         active_layer = iface.activeLayer()
