@@ -17,7 +17,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with segment-reshape-qgis-plugin. If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Callable, List, Tuple, Union
+from typing import Callable, Union
 from unittest.mock import Mock
 
 import pytest
@@ -31,19 +31,19 @@ from qgis.core import (
     QgsVectorLayerUtils,
     QgsWkbTypes,
 )
-from qgis.gui import QgsAdvancedDigitizingDockWidget
+from qgis.gui import QgisInterface, QgsAdvancedDigitizingDockWidget
 
 
 @pytest.fixture(scope="session")
-def qgis_iface(qgis_iface):
-    qgis_iface.cadDockWidget = Mock(
+def qgis_iface(qgis_iface: QgisInterface):
+    qgis_iface.cadDockWidget = Mock(  # type: ignore[method-assign]
         return_value=QgsAdvancedDigitizingDockWidget(qgis_iface.mapCanvas())
     )
     return qgis_iface
 
 
 @pytest.fixture()
-def use_topological_editing(qgis_new_project):
+def _use_topological_editing(qgis_new_project: None):
     QgsProject.instance().setTopologicalEditing(True)
     yield
     QgsProject.instance().setTopologicalEditing(False)
@@ -64,10 +64,10 @@ def memory_layer_factory() -> Callable[[str, QgsWkbTypes.Type], QgsVectorLayer]:
 @pytest.fixture()
 def preset_features_layer_factory(
     memory_layer_factory: Callable[[str, QgsWkbTypes.Type], QgsVectorLayer]
-) -> Callable[[str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]]:
+) -> Callable[[str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]]:
     def _factory(
-        name: str, geoms: List[Union[str, QgsGeometry]]
-    ) -> Tuple[QgsVectorLayer, List[QgsFeature]]:
+        name: str, geoms: list[Union[str, QgsGeometry]]
+    ) -> tuple[QgsVectorLayer, list[QgsFeature]]:
         geometries = [
             QgsGeometry.fromWkt(geom) if isinstance(geom, str) else geom
             for geom in geoms

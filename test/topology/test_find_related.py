@@ -18,11 +18,10 @@
 #  along with segment-reshape-qgis-plugin. If not, see <https://www.gnu.org/licenses/>.
 
 from time import perf_counter
-from typing import Callable, List, Tuple, Union
+from typing import Callable, Union
 
 import pytest
 from qgis.core import QgsFeature, QgsGeometry, QgsPointXY, QgsProject, QgsVectorLayer
-
 from segment_reshape.topology.find_related import (
     _find_vertex_indices,
     find_related_features,
@@ -120,10 +119,10 @@ def _assert_geom_equals_wkt(geom: QgsGeometry, wkt: str) -> None:
 )
 def test_calculate_common_segment_for_single_feature_picks_whole_triggered_component(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ],
     trigger_wkt: str,
-    trigger_indices: Tuple[int, int],
+    trigger_indices: tuple[int, int],
     expected_segment_wkt: str,
 ):
     layer, (feature,) = preset_features_layer_factory("source", [trigger_wkt])
@@ -220,11 +219,11 @@ def test_calculate_common_segment_for_single_feature_picks_whole_triggered_compo
 )
 def test_calculate_common_segment_for_single_feature_results_in_single_reshape_part_and_no_edges(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ],
     trigger_wkt: str,
-    trigger_indices: Tuple[int, int],
-    expected_result_indices: List[int],
+    trigger_indices: tuple[int, int],
+    expected_result_indices: list[int],
 ):
     layer, (feature,) = preset_features_layer_factory("source", [trigger_wkt])
 
@@ -247,7 +246,7 @@ def test_calculate_common_segment_for_single_feature_results_in_single_reshape_p
 
 def test_calculate_common_segment_for_same_polygon_at_both_edges(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ],
 ):
     trigger_wkt = "POLYGON((5 5, 6 6, 7 5, 6 4, 5 5))"  # base
@@ -258,7 +257,7 @@ def test_calculate_common_segment_for_same_polygon_at_both_edges(
     ]
 
     layer, (feature, *other_features) = preset_features_layer_factory(
-        "source", [trigger_wkt] + other_wkts
+        "source", [trigger_wkt, *other_wkts]
     )
 
     (segment, common_parts, edges) = get_common_geometries(
@@ -297,15 +296,15 @@ def test_calculate_common_segment_for_same_polygon_at_both_edges(
 )
 def test_calculate_common_segment_for_multiple_lines_results_in_multiple_reshape_parts(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ],
     trigger_wkt: str,
-    trigger_indices: Tuple[int, int],
-    other_wkts: List[str],
-    expected_part_details: List[Tuple[List[int], bool]],
+    trigger_indices: tuple[int, int],
+    other_wkts: list[str],
+    expected_part_details: list[tuple[list[int], bool]],
 ):
     layer, (feature, *other_features) = preset_features_layer_factory(
-        "source", [trigger_wkt] + other_wkts
+        "source", [trigger_wkt, *other_wkts]
     )
 
     (_, common_parts, _) = get_common_geometries(
@@ -354,15 +353,15 @@ def test_calculate_common_segment_for_multiple_lines_results_in_multiple_reshape
 )
 def test_calculate_common_segment_for_multiple_lines_results_in_multiple_edges(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ],
     trigger_wkt: str,
-    trigger_indices: Tuple[int, int],
-    other_wkts: List[str],
-    expected_edge_details: List[Tuple[int, bool]],
+    trigger_indices: tuple[int, int],
+    other_wkts: list[str],
+    expected_edge_details: list[tuple[int, bool]],
 ):
     layer, (feature, *other_features) = preset_features_layer_factory(
-        "source", [trigger_wkt] + other_wkts
+        "source", [trigger_wkt, *other_wkts]
     )
 
     (_, _, edges) = get_common_geometries(
@@ -393,12 +392,14 @@ def test_calculate_common_segment_for_multiple_lines_results_in_multiple_edges(
     ],
     ids=["linestring", "multipolygon", "Linear ring", "Segment with duplicate points"],
 )
-def test_find_vertex_indices(geom_wkt, segment_wkt, expected_indices):
+def test_find_vertex_indices(
+    geom_wkt: str, segment_wkt: str, expected_indices: list[int]
+):
     """Tests indices with"""
     geom = QgsGeometry.fromWkt(geom_wkt)
     segment = QgsGeometry.fromWkt(segment_wkt)
 
-    indices = _find_vertex_indices(geom, segment)
+    indices = _find_vertex_indices(geom, segment.get())
     assert indices == expected_indices
 
 
@@ -407,7 +408,7 @@ def test_find_vertex_indices_raises_error_with_non_matching_geometries():
     geom = QgsGeometry.fromWkt("Polygon ((0 0, 0 1, 1 1, 1 0, 0 0))")
     segment = QgsGeometry.fromWkt("LineString (5 5, 1 0)")
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError):  # noqa: PT011
         _find_vertex_indices(geom, segment)
 
 
@@ -420,7 +421,7 @@ def test_find_vertex_indices_raises_error_with_non_matching_geometries():
     ids=["equal-to-original", "wrap-around"],
 )
 def test_find_vertex_indices_for_closed_linestring_wraps_around_correctly(
-    segment_wkt: str, expected_indices: List[int]
+    segment_wkt: str, expected_indices: list[int]
 ):
     geom = QgsGeometry.fromWkt("Linestring (0 0, 0 1, 1 1, 1 0, 0 0)")
     segment = QgsGeometry.fromWkt(segment_wkt)
@@ -437,7 +438,7 @@ def test_find_vertex_indices_for_closed_linestring_wraps_around_correctly(
     ids=["equal-to-original", "wrap-around"],
 )
 def test_find_vertex_indices_for_polygon_ring_wraps_around_correctly(
-    segment_wkt: str, expected_indices: List[int]
+    segment_wkt: str, expected_indices: list[int]
 ):
     geom = QgsGeometry.fromWkt("Polygon ((0 0, 0 1, 1 1, 1 0, 0 0))")
     segment = QgsGeometry.fromWkt(segment_wkt)
@@ -460,7 +461,7 @@ def test_find_vertex_indices_for_polygon_ring_wraps_around_correctly(
 )
 def test_calculate_common_segment_for_huge_polygon_coordinate_count_is_fast_enough(
     preset_features_layer_factory: Callable[
-        [str, List[Union[QgsGeometry, str]]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[Union[QgsGeometry, str]]], tuple[QgsVectorLayer, list[QgsFeature]]
     ],
     vertex_count: int,
     allowed_duration_ms: int,
@@ -520,15 +521,15 @@ def test_calculate_common_segment_for_huge_polygon_coordinate_count_is_fast_enou
 )
 def test_calculate_common_segment_uses_xy_for_calculation_and_preserves_source_z(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ],
     trigger_wkt: str,
-    trigger_indices: Tuple[int, int],
-    other_wkts: List[str],
+    trigger_indices: tuple[int, int],
+    other_wkts: list[str],
     expected_segment_wkt: str,
 ):
     layer, (feature, *other_features) = preset_features_layer_factory(
-        "source", [trigger_wkt] + other_wkts
+        "source", [trigger_wkt, *other_wkts]
     )
 
     (segment, _, _) = get_common_geometries(
@@ -594,15 +595,15 @@ def test_calculate_common_segment_uses_xy_for_calculation_and_preserves_source_z
 )
 def test_calculate_common_segment_line_trigger_expanded(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ],
     trigger_wkt: str,
-    trigger_indices: Tuple[int, int],
-    other_wkts: List[str],
+    trigger_indices: tuple[int, int],
+    other_wkts: list[str],
     expected_segment_wkt: str,
 ):
     layer, (feature, *other_features) = preset_features_layer_factory(
-        "source", [trigger_wkt] + other_wkts
+        "source", [trigger_wkt, *other_wkts]
     )
 
     (segment, _, _) = get_common_geometries(
@@ -618,7 +619,7 @@ def test_calculate_common_segment_line_trigger_expanded(
 
 def test_calculate_common_segment_line_broken_by_points_as_edges(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ],
 ):
     layer, (feature,) = preset_features_layer_factory(
@@ -672,15 +673,15 @@ def test_calculate_common_segment_line_broken_by_points_as_edges(
 )
 def test_calculate_common_segment_line_having_related_feature_not_at_vertex_trigger_expanded(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ],
     trigger_wkt: str,
-    trigger_indices: Tuple[int, int],
-    other_wkts: List[str],
+    trigger_indices: tuple[int, int],
+    other_wkts: list[str],
     expected_segment_wkt: str,
 ):
     layer, (feature, *other_features) = preset_features_layer_factory(
-        "source", [trigger_wkt] + other_wkts
+        "source", [trigger_wkt, *other_wkts]
     )
 
     (segment, _, _) = get_common_geometries(
@@ -710,15 +711,15 @@ def test_calculate_common_segment_line_having_related_feature_not_at_vertex_trig
 )
 def test_calculate_common_segment_line_having_related_feature_linear_intersect_trigger_expanded(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ],
     trigger_wkt: str,
-    trigger_indices: Tuple[int, int],
-    other_wkts: List[str],
+    trigger_indices: tuple[int, int],
+    other_wkts: list[str],
     expected_segment_wkt: str,
 ):
     layer, (feature, *other_features) = preset_features_layer_factory(
-        "source", [trigger_wkt] + other_wkts
+        "source", [trigger_wkt, *other_wkts]
     )
 
     (segment, _, _) = get_common_geometries(
@@ -755,15 +756,15 @@ def test_calculate_common_segment_line_having_related_feature_linear_intersect_t
 )
 def test_calculate_common_segment_polygon_ring_boundary_crossed(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ],
     trigger_wkt: str,
-    trigger_indices: Tuple[int, int],
-    other_wkts: List[str],
+    trigger_indices: tuple[int, int],
+    other_wkts: list[str],
     expected_segment_wkt: str,
 ):
     layer, (feature, *other_features) = preset_features_layer_factory(
-        "source", [trigger_wkt] + other_wkts
+        "source", [trigger_wkt, *other_wkts]
     )
 
     (segment, _, _) = get_common_geometries(
@@ -824,16 +825,16 @@ def test_calculate_common_segment_polygon_ring_boundary_crossed(
 )
 def test_calculate_common_segment_closed_linestring_boundary_crossed(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ],
     trigger_wkt: str,
-    trigger_indices: Tuple[int, int],
-    other_wkts: List[str],
+    trigger_indices: tuple[int, int],
+    other_wkts: list[str],
     expected_segment_wkt: str,
-    expected_indices: List[int],
+    expected_indices: list[int],
 ):
     layer, (feature, *other_features) = preset_features_layer_factory(
-        "source", [trigger_wkt] + other_wkts
+        "source", [trigger_wkt, *other_wkts]
     )
 
     (segment, common_parts, _) = get_common_geometries(
@@ -872,15 +873,15 @@ def test_calculate_common_segment_closed_linestring_boundary_crossed(
 )
 def test_calculate_common_segment_line_having_related_feature_contains_trigger_as_difference_sequence(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ],
     trigger_wkt: str,
-    trigger_indices: Tuple[int, int],
-    other_wkts: List[str],
+    trigger_indices: tuple[int, int],
+    other_wkts: list[str],
     expected_segment_wkt: str,
 ):
     layer, (feature, *other_features) = preset_features_layer_factory(
-        "source", [trigger_wkt] + other_wkts
+        "source", [trigger_wkt, *other_wkts]
     )
 
     (segment, _, _) = get_common_geometries(
@@ -897,7 +898,7 @@ def test_calculate_common_segment_line_having_related_feature_contains_trigger_a
 @pytest.mark.usefixtures("qgis_new_project")
 def test_find_related_features_no_results_by_default_if_topological_editing_disabled(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ]
 ):
     source_layer, (source_feature,) = preset_features_layer_factory(
@@ -913,10 +914,10 @@ def test_find_related_features_no_results_by_default_if_topological_editing_disa
     assert results == []
 
 
-@pytest.mark.usefixtures("qgis_new_project", "use_topological_editing")
+@pytest.mark.usefixtures("qgis_new_project", "_use_topological_editing")
 def test_find_related_features_results_by_default_from_project_vector_layers(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ]
 ):
     source_layer, (source_feature,) = preset_features_layer_factory(
@@ -940,7 +941,7 @@ def test_find_related_features_results_by_default_from_project_vector_layers(
 @pytest.mark.usefixtures("qgis_new_project")
 def test_find_related_features_uses_custom_list_if_given_if_topological_editing_disabled(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ]
 ):
     source_layer, (source_feature,) = preset_features_layer_factory(
@@ -963,10 +964,10 @@ def test_find_related_features_uses_custom_list_if_given_if_topological_editing_
     assert layer_ids == [layer1.id(), layer2.id()]
 
 
-@pytest.mark.usefixtures("qgis_new_project", "use_topological_editing")
+@pytest.mark.usefixtures("qgis_new_project", "_use_topological_editing")
 def test_find_related_features_uses_custom_list_if_given(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ]
 ):
     source_layer, (source_feature,) = preset_features_layer_factory(
@@ -990,7 +991,7 @@ def test_find_related_features_uses_custom_list_if_given(
 @pytest.mark.usefixtures("qgis_new_project")
 def test_find_related_features_finds_features_touching_the_target(
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ]
 ):
     source_layer, (source_feature,) = preset_features_layer_factory(

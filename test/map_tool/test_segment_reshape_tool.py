@@ -17,7 +17,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with segment-reshape-qgis-plugin. If not, see <https://www.gnu.org/licenses/>.
 
-from typing import TYPE_CHECKING, Callable, List, Optional, Tuple
+from typing import TYPE_CHECKING, Callable, Optional
 from unittest.mock import MagicMock
 
 import pytest
@@ -36,7 +36,6 @@ from qgis.core import (
 from qgis.gui import QgsMapMouseEvent, QgsMapToolIdentify
 from qgis.PyQt.QtCore import QEvent, QPoint, Qt
 from qgis.PyQt.QtGui import QKeyEvent
-
 from segment_reshape.geometry import reshape
 from segment_reshape.map_tool.segment_reshape_tool import SegmentReshapeTool, ToolMode
 
@@ -72,17 +71,17 @@ def mouse_event_factory(
             QPoint(0, 0),
             mouse_button,
         )
-        event.mapPoint = lambda: location  # type: ignore
-        event.mapPointMatch = lambda: QgsPointLocator.Match()  # type: ignore
+        event.mapPoint = lambda: location  # type: ignore[method-assign]
+        event.mapPointMatch = lambda: QgsPointLocator.Match()  # type: ignore[method-assign]
         return event
 
     return mouse_event_for_location
 
 
 @pytest.fixture()
-def add_layer(
+def _add_layer(
     qgis_canvas: QgsMapCanvas,
-):
+) -> None:
     layer = QgsAnnotationLayer(
         "test",
         QgsAnnotationLayer.LayerOptions(QgsProject.instance().transformContext()),
@@ -93,8 +92,8 @@ def add_layer(
 
 
 def _create_identify_result(
-    identified_features: List[Tuple[QgsFeature, QgsVectorLayer]]
-) -> List[QgsMapToolIdentify.IdentifyResult]:
+    identified_features: list[tuple[QgsFeature, QgsVectorLayer]]
+) -> list[QgsMapToolIdentify.IdentifyResult]:
     results = []
 
     for feature, layer in identified_features:
@@ -143,7 +142,6 @@ def test_pressing_esc_in_reshape_mode_aborts_reshape(map_tool: SegmentReshapeToo
 def test_change_to_change_to_reshape_mode_toggles_pick_mode_off(
     map_tool: SegmentReshapeTool,
 ):
-
     map_tool._tool_mode = ToolMode.PICK_SEGMENT
 
     old_geom = QgsGeometry.fromWkt("LINESTRING(0 0, 1 1)")
@@ -235,7 +233,7 @@ def test_left_mouse_click_in_pick_mode_starts_reshape_mode_if_common_segment_is_
     )
 
 
-@pytest.mark.usefixtures("add_layer")
+@pytest.mark.usefixtures("_add_layer")
 def test_left_mouse_click_in_reshape_mode_adds_points_to_maptool(
     mocker: MockerFixture,
     qgis_canvas: QgsMapCanvas,
@@ -263,7 +261,7 @@ def test_left_mouse_click_in_reshape_mode_adds_points_to_maptool(
     m_make_reshape_edits.assert_not_called()
 
 
-@pytest.mark.usefixtures("add_layer")
+@pytest.mark.usefixtures("_add_layer")
 @pytest.mark.parametrize(
     ("points_to_remove", "expected_new"),
     [
@@ -399,13 +397,13 @@ def test_right_mouse_click_in_reshape_mode_calls_reshape_if_edited_geometry_is_n
     m_make_reshape_edits.assert_called_once()
 
 
-@pytest.mark.usefixtures("use_topological_editing")
+@pytest.mark.usefixtures("_use_topological_editing")
 def test_find_common_segment_should_return_shared_segment(
     qgis_iface: QgisInterface,
     map_tool: SegmentReshapeTool,
     mocker: MockerFixture,
     preset_features_layer_factory: Callable[
-        [str, List[str]], Tuple[QgsVectorLayer, List[QgsFeature]]
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ],
 ):
     layer, (base_feature, *_) = preset_features_layer_factory(

@@ -17,12 +17,11 @@
 #  You should have received a copy of the GNU General Public License
 #  along with segment-reshape-qgis-plugin. If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Iterator
+from collections.abc import Iterator
 
 import pytest
 from pytest_mock import MockerFixture
 from pytest_qgis import QgisInterface
-
 from segment_reshape_plugin import classFactory
 from segment_reshape_plugin.plugin import SegmentReshapePlugin
 

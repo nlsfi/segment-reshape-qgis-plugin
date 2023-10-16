@@ -21,6 +21,7 @@ import logging
 from typing import Optional, cast
 
 import qgis_plugin_tools
+import segment_reshape
 from qgis.gui import QgisInterface
 from qgis.PyQt.QtCore import QCoreApplication, QObject, QTranslator
 from qgis.PyQt.QtGui import QIcon
@@ -29,13 +30,12 @@ from qgis.utils import iface as iface_
 from qgis_plugin_tools.tools.custom_logging import setup_loggers
 from qgis_plugin_tools.tools.i18n import setup_translation, tr
 from qgis_plugin_tools.tools.resources import resources_path
-
-import segment_reshape
-import segment_reshape_plugin
 from segment_reshape.map_tool.segment_reshape_tool import (
     SegmentReshapeTool,
     SegmentReshapeToolHandler,
 )
+
+import segment_reshape_plugin
 
 iface = cast(QgisInterface, iface_)
 LOGGER = logging.getLogger(__name__)
@@ -58,7 +58,7 @@ class SegmentReshapePlugin(QObject):
         self.segment_reshape_tool = SegmentReshapeTool(iface.mapCanvas())
         self.segment_reshape_tool_action: Optional[QAction] = None
 
-    def initGui(self) -> None:  # noqa: N802 (qgis naming)
+    def initGui(self) -> None:  # (qgis naming)
         self._teardown_loggers = setup_loggers(
             segment_reshape.__name__,
             segment_reshape_plugin.__name__,

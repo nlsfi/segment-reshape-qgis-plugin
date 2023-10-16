@@ -1,6 +1,5 @@
 import pytest
 from qgis.core import QgsGeometry, QgsPoint
-
 from segment_reshape.utils import vertices
 
 
@@ -27,7 +26,9 @@ from segment_reshape.utils import vertices
         ),
     ],
 )
-def test_vertices_function_returns_expected_points(wkt, expected_points):
+def test_vertices_function_returns_expected_points(
+    wkt: str, expected_points: list[QgsPoint]
+):
     geometry = QgsGeometry.fromWkt(wkt)
     for i, (_, point) in enumerate(vertices(geometry)):
         assert point == expected_points[i]

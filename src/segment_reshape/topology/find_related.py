@@ -17,7 +17,8 @@
 #  You should have received a copy of the GNU General Public License
 #  along with segment-reshape-qgis-plugin. If not, see <https://www.gnu.org/licenses/>.
 
-from typing import FrozenSet, Iterable, Iterator, List, NamedTuple, Optional, Set, Tuple
+from collections.abc import Iterable, Iterator
+from typing import NamedTuple, Optional
 
 from qgis.core import (
     QgsAbstractGeometry,
@@ -35,21 +36,21 @@ from qgis.core import (
 from segment_reshape.geometry.reshape import ReshapeCommonPart, ReshapeEdge
 from segment_reshape.utils.geometry_utils import vertices
 
-Point = Tuple[float, float]
-Segment = FrozenSet[Point]
+Point = tuple[float, float]
+Segment = frozenset[Point]
 
 
 class CommonGeometriesResult(NamedTuple):
     segment: Optional[QgsLineString]
-    common_parts: List[ReshapeCommonPart]
-    edges: List[ReshapeEdge]
+    common_parts: list[ReshapeCommonPart]
+    edges: list[ReshapeEdge]
 
 
 def find_segment_to_reshape(
     layer: QgsVectorLayer,
     feature: QgsFeature,
-    segment_closest_to_trigger_location: Tuple[int, int],
-    candidate_layers: Optional[List[QgsVectorLayer]] = None,
+    segment_closest_to_trigger_location: tuple[int, int],
+    candidate_layers: Optional[list[QgsVectorLayer]] = None,
 ) -> CommonGeometriesResult:
     """
     Calculates the line segment between features that share equal
@@ -68,7 +69,7 @@ def find_segment_to_reshape(
 
 def _find_topologically_related_project_layers(
     layer: QgsVectorLayer,
-) -> List[QgsVectorLayer]:
+) -> list[QgsVectorLayer]:
     if not QgsProject.instance().topologicalEditing():
         return []
 
@@ -92,8 +93,8 @@ def _is_same_feature(
 def find_related_features(
     layer: QgsVectorLayer,
     feature: QgsFeature,
-    candidate_layers: Optional[List[QgsVectorLayer]] = None,
-) -> Iterator[Tuple[QgsVectorLayer, QgsFeature]]:
+    candidate_layers: Optional[list[QgsVectorLayer]] = None,
+) -> Iterator[tuple[QgsVectorLayer, QgsFeature]]:
     if candidate_layers is None:
         candidate_layers = _find_topologically_related_project_layers(layer)
 
@@ -167,7 +168,7 @@ def _get_geom_component_of_vertex(geom: QgsGeometry, vertex_id: int) -> QgsGeome
 
 def _find_vertex_indices(
     geom: QgsGeometry, segment: "QgsAbstractGeometry"
-) -> List[int]:
+) -> list[int]:
     """Returns vertex indices of the geometry for matching vertices in the segment
 
     Args:
@@ -189,19 +190,19 @@ def _find_vertex_indices(
         (vertex.x(), vertex.y()): vertex_id for vertex_id, vertex in vertices(geom)
     }
 
-    result: List[int] = []
+    result: list[int] = []
     for segment_vertex in segment.vertices():
         try:
             result.append(vertex_to_id_map[(segment_vertex.x(), segment_vertex.y())])
         except KeyError:
             raise ValueError(
                 f"could not find vertex index for {segment_vertex} from {geom}"
-            )
+            ) from None
 
     return result
 
 
-def _check_if_vertices_are_reversed(vertex_indices: List[int]) -> bool:
+def _check_if_vertices_are_reversed(vertex_indices: list[int]) -> bool:
     first, second = vertex_indices[:2]
     return any(
         [
@@ -214,8 +215,8 @@ def _check_if_vertices_are_reversed(vertex_indices: List[int]) -> bool:
 def get_common_geometries(
     main_feature_layer: QgsVectorLayer,
     main_feature: QgsFeature,
-    related_features_by_layer: Iterable[Tuple[QgsVectorLayer, QgsFeature]],
-    main_feature_segment: Tuple[int, int],
+    related_features_by_layer: Iterable[tuple[QgsVectorLayer, QgsFeature]],
+    main_feature_segment: tuple[int, int],
 ) -> CommonGeometriesResult:
     # for now lines and polygons are supported as the trigger
     if main_feature.geometry().type() not in [
@@ -245,8 +246,8 @@ def get_common_geometries(
     # start with the full line component as the result
     line_segments_to_keep = _as_line_segments(trigger_part)
 
-    common_part_candidates: List[Tuple[QgsVectorLayer, QgsFeature]] = []
-    possible_edge_candidates: List[Tuple[QgsVectorLayer, QgsFeature, QgsGeometry]] = []
+    common_part_candidates: list[tuple[QgsVectorLayer, QgsFeature]] = []
+    possible_edge_candidates: list[tuple[QgsVectorLayer, QgsFeature, QgsGeometry]] = []
 
     for layer, feature in related_features_by_layer:
         for component in _as_point_or_line_components(feature.geometry()):
@@ -289,7 +290,7 @@ def get_common_geometries(
 
     start, end = QgsGeometry(segment.startPoint()), QgsGeometry(segment.endPoint())
 
-    common_parts: List[ReshapeCommonPart] = [
+    common_parts: list[ReshapeCommonPart] = [
         ReshapeCommonPart(
             main_feature_layer,
             main_feature,
@@ -309,7 +310,7 @@ def get_common_geometries(
             )
         )
 
-    edges: List[ReshapeEdge] = []
+    edges: list[ReshapeEdge] = []
     for possible_edge_candidate in possible_edge_candidates:
         layer, feature, component = possible_edge_candidate
         if start.intersects(component):
@@ -336,16 +337,16 @@ def get_common_geometries(
     return CommonGeometriesResult(segment, common_parts, edges)
 
 
-def _as_line_segments(geometry: QgsGeometry) -> Set[Segment]:
+def _as_line_segments(geometry: QgsGeometry) -> set[Segment]:
     vertices = [(point.x(), point.y()) for point in geometry.vertices()]
     return {frozenset(line) for line in zip(vertices, vertices[1:])}
 
 
 def _build_line_from_line_segment_set(
     trigger_part: QgsGeometry,
-    line_segments_to_keep: Set[Segment],
+    line_segments_to_keep: set[Segment],
     trigger_segment: Segment,
-    edge_candidate_geometries: List[QgsGeometry],
+    edge_candidate_geometries: list[QgsGeometry],
 ) -> QgsLineString:
     """Build a subline from trigger_part with constraints
 
@@ -376,8 +377,8 @@ def _build_line_from_line_segment_set(
     next_vertex_iterator = trigger_part.vertices()
     _ = next(next_vertex_iterator)  # advance the next_vertex iterator by one
 
-    parts: List[List[QgsPoint]] = []
-    current_part_vertices: List[QgsPoint] = []
+    parts: list[list[QgsPoint]] = []
+    current_part_vertices: list[QgsPoint] = []
     for vertex, next_vertex in zip(vertex_iterator, next_vertex_iterator):
         vertex_tuple = (vertex.x(), vertex.y())
         next_vertex_tuple = (next_vertex.x(), next_vertex.y())
@@ -409,5 +410,5 @@ def _build_line_from_line_segment_set(
         return QgsLineString(parts[trigger_in_part])
 
 
-def _is_linear_ring_split(parts: List[List[QgsPoint]]) -> bool:
-    return len(parts) >= 2 and parts[0][0] == parts[-1][-1]
+def _is_linear_ring_split(parts: list[list[QgsPoint]]) -> bool:
+    return len(parts) >= 2 and parts[0][0] == parts[-1][-1]  # noqa: PLR2004
