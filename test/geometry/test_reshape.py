@@ -17,11 +17,12 @@
 #  You should have received a copy of the GNU General Public License
 #  along with segment-reshape-qgis-plugin. If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Callable
+from collections.abc import Callable
 
 import pytest
 from pytest_mock import MockerFixture
 from qgis.core import QgsFeature, QgsGeometry, QgsLineString, QgsPoint, QgsVectorLayer
+
 from segment_reshape.geometry.reshape import (
     GeometryTransformationError,
     ReshapeCommonPart,

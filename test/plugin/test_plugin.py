@@ -22,6 +22,7 @@ from collections.abc import Iterator
 import pytest
 from pytest_mock import MockerFixture
 from pytest_qgis import QgisInterface
+
 from segment_reshape_plugin import classFactory
 from segment_reshape_plugin.plugin import SegmentReshapePlugin
 

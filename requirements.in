@@ -15,10 +15,10 @@ pyqt5-stubs==5.15.6.0
 atomicwrites==1.4.0
 
 # linting
+pyyaml>=6.0.1
 pre-commit==3.4.0
-mypy==1.4.1
-black==23.7.0
-ruff==0.0.292
+mypy==1.13.0
+ruff==0.8.1
 
 # flake8 libraries not included in ruff
 flake8==6.0.0

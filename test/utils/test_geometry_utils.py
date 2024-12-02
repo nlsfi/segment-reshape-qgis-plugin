@@ -1,5 +1,6 @@
 import pytest
 from qgis.core import QgsGeometry, QgsPoint
+
 from segment_reshape.utils import vertices
 
 

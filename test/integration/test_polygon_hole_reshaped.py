@@ -17,10 +17,11 @@
 #  You should have received a copy of the GNU General Public License
 #  along with segment-reshape-qgis-plugin. If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Callable
+from collections.abc import Callable
 
 import pytest
 from qgis.core import QgsFeature, QgsGeometry, QgsLineString, QgsProject, QgsVectorLayer
+
 from segment_reshape.geometry.reshape import make_reshape_edits
 from segment_reshape.topology.find_related import find_segment_to_reshape
 

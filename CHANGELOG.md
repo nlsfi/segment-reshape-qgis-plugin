@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- use Python 3.12
+
 ## [0.1.6] - 2023-09-06
 
 - update author email

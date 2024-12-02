@@ -19,13 +19,12 @@
 
 
 from collections.abc import Iterator
-from typing import Union
 
 from qgis.core import QgsAbstractGeometry, QgsGeometry, QgsPoint
 
 
 def clone_geometry_safely(
-    geometry: Union[QgsGeometry, QgsAbstractGeometry]
+    geometry: QgsGeometry | QgsAbstractGeometry
 ) -> QgsGeometry:
     if isinstance(geometry, QgsGeometry):
         original_abstract_geometry = geometry.get()

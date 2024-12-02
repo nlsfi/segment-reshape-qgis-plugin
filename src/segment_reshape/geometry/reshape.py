@@ -21,7 +21,6 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass
-from typing import Union
 
 from qgis.core import (
     QgsFeature,
@@ -107,7 +106,7 @@ def _set_editable_and_begin_edit_command_once(layer: QgsVectorLayer) -> None:
 def make_reshape_edits(
     common_parts: list[ReshapeCommonPart],
     edges: list[ReshapeEdge],
-    reshape_geometry: Union[QgsPoint, QgsLineString],
+    reshape_geometry: QgsPoint | QgsLineString,
 ) -> None:
     """
     Reshape the provided common parts and edges, so that common part shared
@@ -136,7 +135,7 @@ def make_reshape_edits(
 
 def _reshape_common_parts(
     common_parts: list[ReshapeCommonPart],
-    reshape_geometry: Union[QgsPoint, QgsLineString],
+    reshape_geometry: QgsPoint | QgsLineString,
 ) -> None:
     for common_part in common_parts:
         _set_editable_and_begin_edit_command_once(common_part.layer)
@@ -160,7 +159,7 @@ def _reshape_common_parts(
 def _reshape_geometry(  # noqa: C901, PLR0912
     original: QgsGeometry,
     vertex_indices: list[int],
-    reshape_geometry: Union[QgsPoint, QgsLineString],
+    reshape_geometry: QgsPoint | QgsLineString,
 ) -> QgsGeometry:
     new = clone_geometry_safely(original)
 
@@ -246,7 +245,8 @@ def _reshape_geometry(  # noqa: C901, PLR0912
             and len(vertex_indices) > 1
             and any(
                 abs(first - second) > 1
-                for first, second in zip(vertex_indices[:-1], vertex_indices[1:])
+                for first, second in
+                zip(vertex_indices[:-1], vertex_indices[1:], strict=False)  # noqa: RUF007
             )
         ):
             # reshape will scroll the origin to be located at the start

@@ -18,7 +18,7 @@
 #  along with segment-reshape-qgis-plugin. If not, see <https://www.gnu.org/licenses/>.
 
 from collections.abc import Iterable, Iterator
-from typing import NamedTuple, Optional
+from typing import NamedTuple
 
 from qgis.core import (
     QgsAbstractGeometry,
@@ -41,7 +41,7 @@ Segment = frozenset[Point]
 
 
 class CommonGeometriesResult(NamedTuple):
-    segment: Optional[QgsLineString]
+    segment: QgsLineString | None
     common_parts: list[ReshapeCommonPart]
     edges: list[ReshapeEdge]
 
@@ -50,7 +50,7 @@ def find_segment_to_reshape(
     layer: QgsVectorLayer,
     feature: QgsFeature,
     segment_closest_to_trigger_location: tuple[int, int],
-    candidate_layers: Optional[list[QgsVectorLayer]] = None,
+    candidate_layers: list[QgsVectorLayer] | None = None,
 ) -> CommonGeometriesResult:
     """
     Calculates the line segment between features that share equal
@@ -93,7 +93,7 @@ def _is_same_feature(
 def find_related_features(
     layer: QgsVectorLayer,
     feature: QgsFeature,
-    candidate_layers: Optional[list[QgsVectorLayer]] = None,
+    candidate_layers: list[QgsVectorLayer] | None = None,
 ) -> Iterator[tuple[QgsVectorLayer, QgsFeature]]:
     if candidate_layers is None:
         candidate_layers = _find_topologically_related_project_layers(layer)
@@ -339,7 +339,7 @@ def get_common_geometries(
 
 def _as_line_segments(geometry: QgsGeometry) -> set[Segment]:
     vertices = [(point.x(), point.y()) for point in geometry.vertices()]
-    return {frozenset(line) for line in zip(vertices, vertices[1:])}
+    return {frozenset(line) for line in zip(vertices, vertices[1:], strict=False)}  # noqa: RUF007
 
 
 def _build_line_from_line_segment_set(
@@ -379,7 +379,7 @@ def _build_line_from_line_segment_set(
 
     parts: list[list[QgsPoint]] = []
     current_part_vertices: list[QgsPoint] = []
-    for vertex, next_vertex in zip(vertex_iterator, next_vertex_iterator):
+    for vertex, next_vertex in zip(vertex_iterator, next_vertex_iterator, strict=False):
         vertex_tuple = (vertex.x(), vertex.y())
         next_vertex_tuple = (next_vertex.x(), next_vertex.y())
         segment = frozenset((vertex_tuple, next_vertex_tuple))

@@ -17,7 +17,8 @@
 #  You should have received a copy of the GNU General Public License
 #  along with segment-reshape-qgis-plugin. If not, see <https://www.gnu.org/licenses/>.
 
-from typing import TYPE_CHECKING, Callable, Optional
+from collections.abc import Callable
+from typing import TYPE_CHECKING
 from unittest.mock import MagicMock
 
 import pytest
@@ -36,6 +37,7 @@ from qgis.core import (
 from qgis.gui import QgsMapMouseEvent, QgsMapToolIdentify
 from qgis.PyQt.QtCore import QEvent, QPoint, Qt
 from qgis.PyQt.QtGui import QKeyEvent
+
 from segment_reshape.geometry import reshape
 from segment_reshape.map_tool.segment_reshape_tool import SegmentReshapeTool, ToolMode
 
@@ -47,7 +49,7 @@ if TYPE_CHECKING:
             self,
             location: QgsPointXY,
             mouse_event_type: QEvent.Type,
-            mouse_button: Optional[Qt.MouseButton] = Qt.NoButton,
+            mouse_button: Qt.MouseButton | None = Qt.NoButton,
         ) -> QgsMapMouseEvent:
             ...
 
@@ -55,14 +57,14 @@ if TYPE_CHECKING:
 MOUSE_LOCATION = QgsPointXY(1.5, 1.5)
 
 
-@pytest.fixture()
+@pytest.fixture
 def mouse_event_factory(
     qgis_canvas: QgsMapCanvas,
 ) -> "MouseEventFactoryType":
     def mouse_event_for_location(
         location: QgsPointXY,
         mouse_event_type: QEvent.Type,
-        mouse_button: Optional[Qt.MouseButton] = None,
+        mouse_button: Qt.MouseButton | None = None,
     ) -> QgsMapMouseEvent:
         mouse_button = mouse_button or Qt.NoButton
         event = QgsMapMouseEvent(
@@ -78,7 +80,7 @@ def mouse_event_factory(
     return mouse_event_for_location
 
 
-@pytest.fixture()
+@pytest.fixture
 def _add_layer(
     qgis_canvas: QgsMapCanvas,
 ) -> None:
@@ -106,7 +108,7 @@ def _create_identify_result(
     return results
 
 
-@pytest.fixture()
+@pytest.fixture
 def map_tool(qgis_canvas: QgsMapCanvas, qgis_new_project: None) -> SegmentReshapeTool:
     tool = SegmentReshapeTool(qgis_canvas)
     qgis_canvas.setMapTool(tool)

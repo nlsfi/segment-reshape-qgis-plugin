@@ -17,11 +17,12 @@
 #  You should have received a copy of the GNU General Public License
 #  along with segment-reshape-qgis-plugin. If not, see <https://www.gnu.org/licenses/>.
 
+from collections.abc import Callable
 from time import perf_counter
-from typing import Callable, Union
 
 import pytest
 from qgis.core import QgsFeature, QgsGeometry, QgsPointXY, QgsProject, QgsVectorLayer
+
 from segment_reshape.topology.find_related import (
     _find_vertex_indices,
     find_related_features,
@@ -317,7 +318,7 @@ def test_calculate_common_segment_for_multiple_lines_results_in_multiple_reshape
     assert len(common_parts) == len(expected_part_details)
 
     for common_part, (expected_indices, expected_reversed) in zip(
-        common_parts, expected_part_details
+        common_parts, expected_part_details, strict=False
     ):
         assert common_part.vertex_indices == expected_indices
         assert common_part.is_reversed == expected_reversed
@@ -373,7 +374,7 @@ def test_calculate_common_segment_for_multiple_lines_results_in_multiple_edges(
 
     assert len(edges) == len(expected_edge_details)
 
-    for edge, (expected_index, expected_start) in zip(edges, expected_edge_details):
+    for edge, (expected_index, expected_start) in zip(edges, expected_edge_details, strict=False):
         assert edge.vertex_index == expected_index
         assert edge.is_start == expected_start
 
@@ -461,7 +462,7 @@ def test_find_vertex_indices_for_polygon_ring_wraps_around_correctly(
 )
 def test_calculate_common_segment_for_huge_polygon_coordinate_count_is_fast_enough(
     preset_features_layer_factory: Callable[
-        [str, list[Union[QgsGeometry, str]]], tuple[QgsVectorLayer, list[QgsFeature]]
+        [str, list[QgsGeometry | str]], tuple[QgsVectorLayer, list[QgsFeature]]
     ],
     vertex_count: int,
     allowed_duration_ms: int,

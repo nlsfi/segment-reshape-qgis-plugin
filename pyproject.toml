@@ -5,7 +5,7 @@ ignore = [
 line-length = 88
 
 # List of all rules https://docs.astral.sh/ruff/rules/
-select = [
+lint.select = [
     "ANN", # flake8-annotations
     "B", # flake8-bugbear
     "C", # flake8-comprehensions
@@ -33,12 +33,12 @@ select = [
 # directives, despite Ruff's lack of support for `flake8-spellcheck`.
 external = ["SC200"]
 
-target-version = "py39"
+target-version = "py312"
 
 [tool.ruff.flake8-tidy-imports]
 ban-relative-imports = "all"
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "test*" = [
     "INP001",
     "ANN201",

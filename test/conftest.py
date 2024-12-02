@@ -17,7 +17,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with segment-reshape-qgis-plugin. If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Callable, Union
+from collections.abc import Callable
 from unittest.mock import Mock
 
 import pytest
@@ -42,14 +42,14 @@ def qgis_iface(qgis_iface: QgisInterface):
     return qgis_iface
 
 
-@pytest.fixture()
+@pytest.fixture
 def _use_topological_editing(qgis_new_project: None):
     QgsProject.instance().setTopologicalEditing(True)
     yield
     QgsProject.instance().setTopologicalEditing(False)
 
 
-@pytest.fixture()
+@pytest.fixture
 def memory_layer_factory() -> Callable[[str, QgsWkbTypes.Type], QgsVectorLayer]:
     def _factory(name: str, geometry_type: QgsWkbTypes.Type) -> QgsVectorLayer:
         return QgsMemoryProviderUtils.createMemoryLayer(
@@ -61,12 +61,12 @@ def memory_layer_factory() -> Callable[[str, QgsWkbTypes.Type], QgsVectorLayer]:
     return _factory
 
 
-@pytest.fixture()
+@pytest.fixture
 def preset_features_layer_factory(
     memory_layer_factory: Callable[[str, QgsWkbTypes.Type], QgsVectorLayer]
 ) -> Callable[[str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]]:
     def _factory(
-        name: str, geoms: list[Union[str, QgsGeometry]]
+        name: str, geoms: list[str | QgsGeometry]
     ) -> tuple[QgsVectorLayer, list[QgsFeature]]:
         geometries = [
             QgsGeometry.fromWkt(geom) if isinstance(geom, str) else geom

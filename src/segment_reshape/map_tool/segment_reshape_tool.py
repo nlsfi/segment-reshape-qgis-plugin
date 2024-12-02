@@ -23,8 +23,6 @@ from contextlib import contextmanager
 from enum import Enum, IntEnum
 from typing import (
     TYPE_CHECKING,
-    Optional,
-    Union,
     cast,
     overload,
 )
@@ -74,7 +72,7 @@ class CoordinateTransformationError(Exception):
 
 @contextmanager
 def _optional_identify_tool(
-    tool: Optional[QgsMapToolIdentify] = None,
+    tool: QgsMapToolIdentify | None = None,
 ) -> Iterator[QgsMapToolIdentify]:
     if tool:
         yield tool
@@ -164,7 +162,7 @@ class SegmentReshapeTool(QgsMapToolCapture):
         self.find_segment_results = find_related.CommonGeometriesResult(None, [], [])
 
     def _change_to_reshape_mode_for_geom(
-        self, old_geom: QgsGeometry, layer: Optional[QgsVectorLayer] = None
+        self, old_geom: QgsGeometry, layer: QgsVectorLayer | None = None
     ) -> None:
         self._tool_mode = ToolMode.RESHAPE
         self.setCursor(
@@ -288,7 +286,7 @@ class SegmentReshapeTool(QgsMapToolCapture):
                 return
 
             new_geometry.addZValue(self.defaultZValue())
-            reshape_geom: Union[QgsPoint, QgsLineString] = new_geometry
+            reshape_geom: QgsPoint | QgsLineString = new_geometry
             if new_geometry.numPoints() == 1:
                 reshape_geom = new_geometry.pointN(0)
 
@@ -303,7 +301,7 @@ class SegmentReshapeTool(QgsMapToolCapture):
 
     def _find_common_segment(
         self, location: QgsPointXY
-    ) -> tuple[Optional[QgsLineString], Optional[QgsVectorLayer]]:
+    ) -> tuple[QgsLineString | None, QgsVectorLayer | None]:
         LOGGER.info("Calculating common segment")
 
         active_layer = iface.activeLayer()
@@ -327,8 +325,8 @@ class SegmentReshapeTool(QgsMapToolCapture):
 
     @staticmethod
     def find_common_segment_at_location(
-        location: QgsPointXY, identify_tool: Optional[QgsMapToolIdentify] = None
-    ) -> Optional[find_related.CommonGeometriesResult]:
+        location: QgsPointXY, identify_tool: QgsMapToolIdentify | None = None
+    ) -> find_related.CommonGeometriesResult | None:
         with _optional_identify_tool(identify_tool) as tool:
             identify_results = tool.identify(
                 geometry=QgsGeometry.fromPointXY(location),
