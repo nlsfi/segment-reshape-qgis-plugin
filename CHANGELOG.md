@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## Unreleased
+## [0.1.7] - 2024-12-16
 
 - Feature: add Finnish translations
 
@@ -64,3 +64,4 @@
 [0.1.4]: https://github.com/nlsfi/segment-reshape-qgis-plugin/releases/tag/v0.1.4
 [0.1.5]: https://github.com/nlsfi/segment-reshape-qgis-plugin/releases/tag/v0.1.5
 [0.1.6]: https://github.com/nlsfi/segment-reshape-qgis-plugin/releases/tag/v0.1.6
+[0.1.7]: https://github.com/nlsfi/segment-reshape-qgis-plugin/releases/tag/v0.1.7
