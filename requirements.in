@@ -8,6 +8,9 @@ pytest-timeout==1.4.2
 pytest-order==1.0.0
 pytest-dotenv==0.5.2
 
+# Pin version for python 3.12 support
+coverage[toml]==7.2.7
+
 #stubs
 pyqt5-stubs==5.15.6.0
 
