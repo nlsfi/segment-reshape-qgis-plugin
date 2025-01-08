@@ -1,5 +1,7 @@
 # CHANGELOG
 
+## Unreleased
+
 ## [0.1.8] - 2025-01-08
 
 - Chore: Fix releasing pipeline
