@@ -113,7 +113,7 @@ python-dotenv==0.21.0
     #   qgis-plugin-dev-tools
 pyyaml==6.0.1
     # via pre-commit
-qgis-plugin-dev-tools==0.5.0
+qgis-plugin-dev-tools==0.9.1
     # via -r requirements.in
 qgis-plugin-tools==0.2.0
     # via segment-reshape-qgis-plugin

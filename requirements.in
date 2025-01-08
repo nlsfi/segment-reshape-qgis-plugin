@@ -30,7 +30,7 @@ flake8-spellcheck==0.28.0
 flake8-qgis==1.0.0
 
 # tools
-qgis-plugin-dev-tools==0.5.0
+qgis-plugin-dev-tools==0.9.1
 
 # NOTE: Runtime requirements for QGIS plugin are defined in setup.cfg
 
