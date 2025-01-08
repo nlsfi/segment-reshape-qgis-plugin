@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Chore: Fix releasing pipeline
+
 ## [0.1.7] - 2024-12-16
 
 - Feature: add Finnish translations
