@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Fix: Edit edge layers only if the edge position changes
+
 ## [0.1.8] - 2025-01-08
 
 - Chore: Fix releasing pipeline

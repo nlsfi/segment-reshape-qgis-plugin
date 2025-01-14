@@ -21,7 +21,7 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass
-from typing import Union
+from typing import Optional, Union
 
 from qgis.core import (
     QgsFeature,
@@ -295,7 +295,6 @@ def _move_edges(
     previously_updated_geoms: dict[tuple[str, int], QgsGeometry] = {}
 
     for edge in edges:
-        _set_editable_and_begin_edit_command_once(edge.layer)
         new_geometry = _move_vertex(
             previously_updated_geoms.get(
                 (edge.layer.id(), edge.feature.id()), edge.feature.geometry()
@@ -303,17 +302,31 @@ def _move_edges(
             edge.vertex_index,
             new_start if edge.is_start else new_end,
         )
-        _update_geometry_to_layer_feature(
-            edge.layer,
-            edge.feature,
-            new_geometry,
-        )
-        previously_updated_geoms[(edge.layer.id(), edge.feature.id())] = new_geometry
+        # _move_vertex returns None if verticis
+        # position was not changed
+        if new_geometry is not None:
+            _set_editable_and_begin_edit_command_once(edge.layer)
+
+            _update_geometry_to_layer_feature(
+                edge.layer,
+                edge.feature,
+                new_geometry,
+            )
+            previously_updated_geoms[
+                (edge.layer.id(), edge.feature.id())
+            ] = new_geometry
 
 
 def _move_vertex(
     original: QgsGeometry, vertex_index: int, new_position: QgsPoint
-) -> QgsGeometry:
+) -> Optional[QgsGeometry]:
+    original_position = original.vertexAt(vertex_index)
+    if (
+        original_position.x() == new_position.x()
+        and original_position.y() == new_position.y()
+    ):
+        return None
+
     new = clone_geometry_safely(original)
     if not new.moveVertex(new_position, vertex_index):
         raise GeometryTransformationError(
