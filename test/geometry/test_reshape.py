@@ -26,6 +26,7 @@ from segment_reshape.geometry.reshape import (
     GeometryTransformationError,
     ReshapeCommonPart,
     ReshapeEdge,
+    _move_edges,
     make_reshape_edits,
 )
 
@@ -1172,3 +1173,52 @@ def test_wraparound_closed_linestring_partially_reshaped(
     )
 
     _assert_layer_geoms(layer, [result])
+
+
+@pytest.mark.parametrize(
+    argnames=(
+        "new_start_wkt",
+        "new_end_wkt",
+        "expected_layer_editable",
+    ),
+    argvalues=[
+        (
+            "POINT(0 0)",
+            "POINT(0 2)",
+            False,
+        ),
+        (
+            "POINT(1 0)",
+            "POINT(0 2)",
+            True,
+        ),
+    ],
+    ids=["edge not moved", "edge moved"],
+)
+@pytest.mark.usefixtures("_with_editable_layers")
+def test_move_edges(
+    preset_features_layer_factory: Callable[
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
+    ],
+    new_start_wkt: str,
+    new_end_wkt: str,
+    expected_layer_editable: bool,
+):
+    new_start = QgsPoint()
+    assert new_start.fromWkt(new_start_wkt)
+
+    new_end = QgsPoint()
+    assert new_end.fromWkt(new_end_wkt)
+
+    layer1, features1 = preset_features_layer_factory(
+        "l1", ["POINT(0 0)", "POINT(2 2)"]
+    )
+    edges = [
+        ReshapeEdge(layer1, features1[0], 0, is_start=True),
+    ]
+
+    assert not layer1.isEditable()
+
+    _move_edges(edges, new_start, new_end)
+
+    assert layer1.isEditable() == expected_layer_editable

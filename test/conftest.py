@@ -32,6 +32,10 @@ from qgis.core import (
     QgsWkbTypes,
 )
 from qgis.gui import QgisInterface, QgsAdvancedDigitizingDockWidget
+from segment_reshape.geometry.reshape import (
+    _current_edit_command_layers,
+    _set_editable_layer_ids,
+)
 
 
 @pytest.fixture(scope="session")
@@ -80,3 +84,16 @@ def preset_features_layer_factory(
         return layer, added_features
 
     return _factory
+
+
+@pytest.fixture()
+def _with_editable_layers():
+    set_editable_ids: set[str] = set()
+    layers: list[QgsVectorLayer] = []
+    editable_ids_token = _set_editable_layer_ids.set(set_editable_ids)
+    token = _current_edit_command_layers.set(layers)
+    try:
+        yield
+    finally:
+        _current_edit_command_layers.reset(token)
+        _set_editable_layer_ids.reset(editable_ids_token)
