@@ -1,5 +1,7 @@
 # CHANGELOG
 
+## Unreleased
+
 ## [0.1.9] - 2025-01-16
 
 - Fix: Edit edge layers only if the edge position changes
