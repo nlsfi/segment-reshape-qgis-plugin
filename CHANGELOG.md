@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## Unreleased
+## [0.1.9] - 2025-01-16
 
 - Fix: Edit edge layers only if the edge position changes
 
@@ -74,3 +74,4 @@
 [0.1.6]: https://github.com/nlsfi/segment-reshape-qgis-plugin/releases/tag/v0.1.6
 [0.1.7]: https://github.com/nlsfi/segment-reshape-qgis-plugin/releases/tag/v0.1.7
 [0.1.8]: https://github.com/nlsfi/segment-reshape-qgis-plugin/releases/tag/v0.1.8
+[0.1.9]: https://github.com/nlsfi/segment-reshape-qgis-plugin/releases/tag/v0.1.9
