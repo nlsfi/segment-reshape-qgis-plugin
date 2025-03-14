@@ -311,8 +311,11 @@ class SegmentReshapeTool(QgsMapToolCapture):
             MsgBar.warning(tr("No active layer found"), tr("Activate a layer first"))
             return None, None
 
+        # for map tool purposes the default behaviour of all layers (in find_related) is too broad
+        # candidate_layers = [all visible project vector layers, ...]
+
         results = SegmentReshapeTool.find_common_segment_at_location(
-            location, self._identify_tool
+            location, self._identify_tool, # candidate_layers
         )
 
         if results is None:
@@ -327,7 +330,10 @@ class SegmentReshapeTool(QgsMapToolCapture):
 
     @staticmethod
     def find_common_segment_at_location(
-        location: QgsPointXY, identify_tool: Optional[QgsMapToolIdentify] = None
+        location: QgsPointXY,
+        identify_tool: Optional[QgsMapToolIdentify] = None,
+        # option here to configure the layers
+        # candidate_layers: Optional[List[QgsVectorLayer]] = None,
     ) -> Optional[find_related.CommonGeometriesResult]:
         with _optional_identify_tool(identify_tool) as tool:
             identify_results = tool.identify(
@@ -351,6 +357,7 @@ class SegmentReshapeTool(QgsMapToolCapture):
             _,
         ) = feature.geometry().closestSegmentWithContext(location)
 
+        # pass option here
         return find_related.find_segment_to_reshape(
-            layer, feature, (next_vertex_index - 1, next_vertex_index)
+            layer, feature, (next_vertex_index - 1, next_vertex_index), # candidate_layers
         )
