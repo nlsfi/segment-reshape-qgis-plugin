@@ -332,8 +332,7 @@ class SegmentReshapeTool(QgsMapToolCapture):
     def find_common_segment_at_location(
         location: QgsPointXY,
         identify_tool: Optional[QgsMapToolIdentify] = None,
-        # option here to configure the layers
-        # candidate_layers: Optional[List[QgsVectorLayer]] = None,
+        candidate_layers: Optional[list[QgsVectorLayer]] = None,
     ) -> Optional[find_related.CommonGeometriesResult]:
         with _optional_identify_tool(identify_tool) as tool:
             identify_results = tool.identify(
@@ -357,7 +356,6 @@ class SegmentReshapeTool(QgsMapToolCapture):
             _,
         ) = feature.geometry().closestSegmentWithContext(location)
 
-        # pass option here
         return find_related.find_segment_to_reshape(
-            layer, feature, (next_vertex_index - 1, next_vertex_index), # candidate_layers
+            layer, feature, (next_vertex_index - 1, next_vertex_index), candidate_layers
         )

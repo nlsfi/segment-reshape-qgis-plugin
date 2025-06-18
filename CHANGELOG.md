@@ -1,5 +1,7 @@
 # CHANGELOG
 
+- Feature: Add support for configuring candidate layers for common segments
+
 ## Unreleased
 
 ## [0.1.9] - 2025-01-16
