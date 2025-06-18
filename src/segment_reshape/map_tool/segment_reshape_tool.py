@@ -36,6 +36,7 @@ from qgis.core import (
     QgsPoint,
     QgsPointLocator,
     QgsPointXY,
+    QgsProject,
     QgsVectorLayer,
     QgsWkbTypes,
 )
@@ -311,11 +312,23 @@ class SegmentReshapeTool(QgsMapToolCapture):
             MsgBar.warning(tr("No active layer found"), tr("Activate a layer first"))
             return None, None
 
-        # for map tool purposes the default behaviour of all layers (in find_related) is too broad
-        # candidate_layers = [all visible project vector layers, ...]
+        # for map tool purposes the default behaviour of all layers (in find_related)
+        # is too broad
+        candidate_layers = [
+            layer_node.layer()
+            for layer_node in QgsProject.instance().layerTreeRoot().findLayers()
+            if layer_node.isVisible() and isinstance(layer_node.layer(), QgsVectorLayer)
+        ]
+
+        if not candidate_layers:
+            MsgBar.warning(
+                tr("No visible vector layers in the project"),
+                tr("Make some layers visible first"),
+            )
+            return None, None
 
         results = SegmentReshapeTool.find_common_segment_at_location(
-            location, self._identify_tool, # candidate_layers
+            location, self._identify_tool, candidate_layers
         )
 
         if results is None:
