@@ -434,3 +434,38 @@ def test_find_common_segment_should_return_shared_segment(
     assert segment_layer == layer
 
     assert QgsGeometry(segment).isGeosEqual(QgsGeometry.fromWkt("LINESTRING(1 1, 2 2)"))
+
+
+@pytest.mark.usefixtures("_use_topological_editing")
+def test_find_common_segment_should_return_shared_segment2(
+    qgis_iface: QgisInterface,
+    map_tool: SegmentReshapeTool,
+    mocker: MockerFixture,
+    preset_features_layer_factory: Callable[
+        [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
+    ],
+):
+    layer, (base_feature, *_) = preset_features_layer_factory(
+        "l1",
+        [
+            "LINESTRING(0 0, 1 1, 2 2, 3 3)",
+        ],
+    )
+
+    QgsProject.instance().addMapLayer(layer)
+    QgsProject.instance().layerTreeRoot().findLayer(layer).setItemVisibilityChecked(
+        False
+    )
+    qgis_iface.setActiveLayer(layer)
+
+    results = _create_identify_result(
+        [
+            (feature, layer)
+            for feature in layer.getFeatures()
+            if feature.id() != base_feature.id()
+        ]
+    )
+    mocker.patch.object(QgsMapToolIdentify, "identify", return_value=results)
+
+    result = map_tool._find_common_segment(MOUSE_LOCATION)
+    assert result == (None, None)
