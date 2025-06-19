@@ -1,11 +1,9 @@
 # CHANGELOG
 
-- Feature: Use visible vector layers as candidate layers in map tool usage
-- Feature: Add support for configuring candidate layers for common segments
-
 ## Unreleased
 
-## [0.1.10] - 2025-06-19
+- Feature: Use visible vector layers as candidate layers in map tool usage
+- Feature: Add support for configuring candidate layers for common segments
 
 ## [0.1.9] - 2025-01-16
 
@@ -82,4 +80,3 @@
 [0.1.7]: https://github.com/nlsfi/segment-reshape-qgis-plugin/releases/tag/v0.1.7
 [0.1.8]: https://github.com/nlsfi/segment-reshape-qgis-plugin/releases/tag/v0.1.8
 [0.1.9]: https://github.com/nlsfi/segment-reshape-qgis-plugin/releases/tag/v0.1.9
-[0.1.10]: https://github.com/nlsfi/segment-reshape-qgis-plugin/releases/tag/v0.1.10
