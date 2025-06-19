@@ -3,6 +3,8 @@
 - Feature: Use visible vector layers as candidate layers in map tool usage
 - Feature: Add support for configuring candidate layers for common segments
 
+## Unreleased
+
 ## [0.1.10] - 2025-06-19
 
 ## [0.1.9] - 2025-01-16
