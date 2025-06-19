@@ -1,5 +1,7 @@
 # CHANGELOG
 
+## Unreleased
+
 ## [0.1.10] - 2025-06-19
 
 - Feature: Use visible vector layers as candidate layers in map tool usage
