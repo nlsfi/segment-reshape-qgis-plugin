@@ -47,7 +47,7 @@ if TYPE_CHECKING:
             self,
             location: QgsPointXY,
             mouse_event_type: QEvent.Type,
-            mouse_button: Optional[Qt.MouseButton] = Qt.NoButton,
+            mouse_button: Optional[Qt.MouseButton] = Qt.MouseButton.NoButton,
         ) -> QgsMapMouseEvent:
             ...
 
@@ -64,7 +64,7 @@ def mouse_event_factory(
         mouse_event_type: QEvent.Type,
         mouse_button: Optional[Qt.MouseButton] = None,
     ) -> QgsMapMouseEvent:
-        mouse_button = mouse_button or Qt.NoButton
+        mouse_button = mouse_button or Qt.MouseButton.NoButton
         event = QgsMapMouseEvent(
             qgis_canvas,
             mouse_event_type,
@@ -131,7 +131,9 @@ def test_pressing_esc_in_reshape_mode_aborts_reshape(map_tool: SegmentReshapeToo
     )
     assert map_tool._tool_mode == ToolMode.RESHAPE
 
-    escape_press = QKeyEvent(QEvent.KeyPress, Qt.Key_Escape, Qt.NoModifier)
+    escape_press = QKeyEvent(
+        QEvent.Type.KeyPress, Qt.Key.Key_Escape, Qt.KeyboardModifier.NoModifier
+    )
     map_tool.keyPressEvent(escape_press)
 
     assert map_tool._tool_mode == ToolMode.PICK_SEGMENT
@@ -162,8 +164,8 @@ def test_left_mouse_click_in_pick_mode_does_nothing_if_active_layer_or_feature_n
 
     map_release = mouse_event_factory(
         MOUSE_LOCATION,
-        QEvent.MouseButtonRelease,
-        Qt.LeftButton,
+        QEvent.Type.MouseButtonRelease,
+        Qt.MouseButton.LeftButton,
     )
     map_tool.canvasReleaseEvent(map_release)
 
@@ -187,8 +189,8 @@ def test_left_mouse_click_in_pick_mode_does_nothing_if_common_segment_not_found(
 
     map_release = mouse_event_factory(
         MOUSE_LOCATION,
-        QEvent.MouseButtonRelease,
-        Qt.LeftButton,
+        QEvent.Type.MouseButtonRelease,
+        Qt.MouseButton.LeftButton,
     )
     map_tool.canvasReleaseEvent(map_release)
 
@@ -215,8 +217,8 @@ def test_left_mouse_click_in_pick_mode_starts_reshape_mode_if_common_segment_is_
 
     map_release = mouse_event_factory(
         MOUSE_LOCATION,
-        QEvent.MouseButtonRelease,
-        Qt.LeftButton,
+        QEvent.Type.MouseButtonRelease,
+        Qt.MouseButton.LeftButton,
     )
     map_tool.canvasReleaseEvent(map_release)
 
@@ -251,8 +253,8 @@ def test_left_mouse_click_in_reshape_mode_adds_points_to_maptool(
 
     map_release = mouse_event_factory(
         MOUSE_LOCATION,
-        QEvent.MouseButtonRelease,
-        Qt.LeftButton,
+        QEvent.Type.MouseButtonRelease,
+        Qt.MouseButton.LeftButton,
     )
     map_tool.canvasReleaseEvent(map_release)
 
@@ -296,7 +298,9 @@ def test_undo_add_vertex_should_update_new(
     assert map_tool.captureCurve().curveToLine().asWkt() == "LineString (0 0, 1 1, 2 2)"
 
     # Undo n times
-    undo_key_event = QKeyEvent(QEvent.KeyPress, Qt.Key_Backspace, Qt.NoModifier)
+    undo_key_event = QKeyEvent(
+        QEvent.Type.KeyPress, Qt.Key.Key_Backspace, Qt.KeyboardModifier.NoModifier
+    )
     for _ in range(points_to_remove):
         map_tool.keyPressEvent(undo_key_event)
 
@@ -316,7 +320,7 @@ def test_start_point_indicator_rubberband(
     map_tool._change_to_reshape_mode_for_geom(old_geom)
 
     # Move cursor to move temp rubberband end point
-    mouse_move_event = mouse_event_factory(QgsPointXY(2, 3), QEvent.MouseMove)
+    mouse_move_event = mouse_event_factory(QgsPointXY(2, 3), QEvent.Type.MouseMove)
     map_tool.canvasMoveEvent(mouse_move_event)
 
     assert map_tool.start_point_indicator_rubber_band.isVisible()
@@ -329,10 +333,12 @@ def test_start_point_indicator_rubberband(
 
     assert not map_tool.start_point_indicator_rubber_band.isVisible()
 
-    undo_key_event = QKeyEvent(QEvent.KeyPress, Qt.Key_Backspace, Qt.NoModifier)
+    undo_key_event = QKeyEvent(
+        QEvent.Type.KeyPress, Qt.Key.Key_Backspace, Qt.KeyboardModifier.NoModifier
+    )
     map_tool.keyPressEvent(undo_key_event)
 
-    mouse_move_event = mouse_event_factory(QgsPointXY(4, 3), QEvent.MouseMove)
+    mouse_move_event = mouse_event_factory(QgsPointXY(4, 3), QEvent.Type.MouseMove)
     map_tool.canvasMoveEvent(mouse_move_event)
     assert map_tool.start_point_indicator_rubber_band.isVisible()
     assert (
@@ -358,7 +364,7 @@ def test_right_mouse_click_in_reshape_mode_changes_only_to_pick_mode_if_edited_g
     )
 
     right_click = mouse_event_factory(
-        QgsPointXY(1, 1), QEvent.MouseButtonRelease, Qt.RightButton
+        QgsPointXY(1, 1), QEvent.Type.MouseButtonRelease, Qt.MouseButton.RightButton
     )
     map_tool.cadCanvasReleaseEvent(right_click)
 
@@ -382,14 +388,14 @@ def test_right_mouse_click_in_reshape_mode_calls_reshape_if_edited_geometry_is_n
     )
 
     left_click = mouse_event_factory(
-        QgsPointXY(1, 1), QEvent.MouseButtonRelease, Qt.LeftButton
+        QgsPointXY(1, 1), QEvent.Type.MouseButtonRelease, Qt.MouseButton.LeftButton
     )
     # Add point to rubberband
     map_tool.canvasReleaseEvent(left_click)
 
     # Test
     right_click = mouse_event_factory(
-        QgsPointXY(1, 1), QEvent.MouseButtonRelease, Qt.RightButton
+        QgsPointXY(1, 1), QEvent.Type.MouseButtonRelease, Qt.MouseButton.RightButton
     )
     map_tool.cadCanvasReleaseEvent(right_click)
 

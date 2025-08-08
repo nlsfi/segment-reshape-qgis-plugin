@@ -155,7 +155,7 @@ class SegmentReshapeTool(QgsMapToolCapture):
 
     def _change_to_pick_location_mode(self) -> None:
         self._tool_mode = ToolMode.PICK_SEGMENT
-        self.setCursor(Qt.CrossCursor)
+        self.setCursor(Qt.CursorShape.CrossCursor)
         self.setAutoSnapEnabled(False)
         self.setAdvancedDigitizingAllowed(False)
 
@@ -188,10 +188,10 @@ class SegmentReshapeTool(QgsMapToolCapture):
         point_count = self.size()
         super().keyPressEvent(key_event)  # handle normal undo and cancel procedures
         if self._tool_mode == ToolMode.RESHAPE:
-            if key_event.key() == Qt.Key_Escape:
+            if key_event.key() == Qt.Key.Key_Escape:
                 self._change_to_pick_location_mode()
             elif (
-                key_event.key() in (Qt.Key_Delete, Qt.Key_Backspace)
+                key_event.key() in (Qt.Key.Key_Delete, Qt.Key.Key_Backspace)
                 and point_count == 1
             ):
                 # self.undo() resists to undo the first point so force back to initial
@@ -219,7 +219,7 @@ class SegmentReshapeTool(QgsMapToolCapture):
     @log_if_fails
     def canvasReleaseEvent(self, mouse_event: QgsMapMouseEvent) -> None:  # noqa: N802
         if self._tool_mode == ToolMode.PICK_SEGMENT:
-            if mouse_event.button() == Qt.LeftButton:
+            if mouse_event.button() == Qt.MouseButton.LeftButton:
                 self._handle_pick_segment_left_click(mouse_event.mapPoint())
             return
         super().canvasReleaseEvent(mouse_event)
@@ -238,7 +238,7 @@ class SegmentReshapeTool(QgsMapToolCapture):
         """
 
         if self._tool_mode == ToolMode.RESHAPE:
-            if mouse_event.button() == Qt.LeftButton:
+            if mouse_event.button() == Qt.MouseButton.LeftButton:
                 result = self.addVertex(
                     mouse_event.mapPoint(), mouse_event.mapPointMatch()
                 )
@@ -248,7 +248,7 @@ class SegmentReshapeTool(QgsMapToolCapture):
                     )
                     return
                 self.startCapturing()
-            elif mouse_event.button() == Qt.RightButton:
+            elif mouse_event.button() == Qt.MouseButton.RightButton:
                 self._handle_reshape_right_click()
 
     def cadCanvasMoveEvent(self, mouse_event: QgsMapMouseEvent) -> None:  # noqa: N802
@@ -257,7 +257,7 @@ class SegmentReshapeTool(QgsMapToolCapture):
         return super().cadCanvasMoveEvent(mouse_event)
 
     def _handle_pick_segment_left_click(self, location: QgsPointXY) -> None:
-        with override_cursor(Qt.WaitCursor):
+        with override_cursor(Qt.CursorShape.WaitCursor):
             common_segment, layer = self._find_common_segment(location)
             # No active layer or active layer feature found
             if layer is None:
@@ -280,7 +280,7 @@ class SegmentReshapeTool(QgsMapToolCapture):
             self._change_to_reshape_mode_for_geom(QgsGeometry(common_segment), layer)
 
     def _handle_reshape_right_click(self) -> None:
-        with override_cursor(Qt.WaitCursor):
+        with override_cursor(Qt.CursorShape.WaitCursor):
             new_geometry = self.captureCurve().curveToLine()
             self.stopCapturing()
 
