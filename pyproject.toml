@@ -138,6 +138,7 @@ dictionaries = "en_US,python,technical"
 extend-ignore = [
     "E203",  # whitespace before ':'
     "E501",  # line length (checked by ruff now, possible mismatches)
+    "E701",  # multiple statements on one line (colon)
 ]
 per-file-ignores = [
     "test/*:INP001,SC200,QGS105",

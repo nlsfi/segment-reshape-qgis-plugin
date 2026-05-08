@@ -92,7 +92,7 @@ def _add_layer(
 
 
 def _create_identify_result(
-    identified_features: list[tuple[QgsFeature, QgsVectorLayer]]
+    identified_features: list[tuple[QgsFeature, QgsVectorLayer]],
 ) -> list[QgsMapToolIdentify.IdentifyResult]:
     results = []
 

@@ -49,7 +49,7 @@ def _assert_layer_geoms(layer: QgsVectorLayer, expected_geom_wkts: list[str]):
 def test_editing_enabled_for_non_editable_layers(
     preset_features_layer_factory: Callable[
         [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
-    ]
+    ],
 ):
     layer1, features1 = preset_features_layer_factory("l1", ["LINESTRING(0 0, 1 1)"])
     layer2, features2 = preset_features_layer_factory("l2", ["LINESTRING(0 0, 1 1)"])
@@ -73,7 +73,7 @@ def test_editing_enabled_for_non_editable_layers(
 def test_edits_made_in_single_edit_command_for_each_layer(
     preset_features_layer_factory: Callable[
         [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
-    ]
+    ],
 ):
     layer1, features1 = preset_features_layer_factory(
         "l1", ["LINESTRING(0 0, 1 1)", "LINESTRING(0 0, 1 1)"]
@@ -102,7 +102,7 @@ def test_edits_made_in_single_edit_command_for_each_layer(
 def test_existing_edit_command_allowed_without_modifications(
     preset_features_layer_factory: Callable[
         [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
-    ]
+    ],
 ):
     layer1, features1 = preset_features_layer_factory(
         "l1", ["LINESTRING(0 0, 1 1)", "LINESTRING(0 0, 1 1)"]
@@ -252,7 +252,7 @@ def test_existing_edit_command_not_removed_on_error(
 def test_edits_applied_to_layer_features(
     preset_features_layer_factory: Callable[
         [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
-    ]
+    ],
 ):
     layer1, features1 = preset_features_layer_factory("l1", ["LINESTRING(0 0, 1 1)"])
     layer2, features2 = preset_features_layer_factory("l2", ["LINESTRING(0 0, 1 1)"])
@@ -273,7 +273,7 @@ def test_edits_applied_to_layer_features(
 def test_reshape_with_invalid_indices_fails(
     preset_features_layer_factory: Callable[
         [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
-    ]
+    ],
 ):
     layer1, features1 = preset_features_layer_factory("l1", ["LINESTRING(0 0, 1 1)"])
 
@@ -290,7 +290,7 @@ def test_reshape_with_invalid_indices_fails(
 def test_common_point_reshaped(
     preset_features_layer_factory: Callable[
         [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
-    ]
+    ],
 ):
     layer1, features1 = preset_features_layer_factory("l1", ["POINT(0 0)"])
 
@@ -308,7 +308,7 @@ def test_common_point_reshaped(
 def test_common_point_reshaped_by_line_fails(
     preset_features_layer_factory: Callable[
         [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
-    ]
+    ],
 ):
     layer1, features1 = preset_features_layer_factory("l1", ["POINT(0 0)"])
 
@@ -325,7 +325,7 @@ def test_common_point_reshaped_by_line_fails(
 def test_common_multipoint_reshaped(
     preset_features_layer_factory: Callable[
         [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
-    ]
+    ],
 ):
     layer1, features1 = preset_features_layer_factory(
         "l1", ["MULTIPOINT(0 0, 1 1, 2 2)"]
@@ -345,7 +345,7 @@ def test_common_multipoint_reshaped(
 def test_common_multipoint_reshaped_by_line_from_multiple_vertices(
     preset_features_layer_factory: Callable[
         [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
-    ]
+    ],
 ):
     layer1, features1 = preset_features_layer_factory(
         "l1", ["MULTIPOINT(0 0, 1 1, 2 2, 3 3)"]
@@ -365,7 +365,7 @@ def test_common_multipoint_reshaped_by_line_from_multiple_vertices(
 def test_common_multipoint_reshaped_by_line_from_single_vertex(
     preset_features_layer_factory: Callable[
         [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
-    ]
+    ],
 ):
     layer1, features1 = preset_features_layer_factory(
         "l1", ["MULTIPOINT(0 0, 1 1, 2 2)"]

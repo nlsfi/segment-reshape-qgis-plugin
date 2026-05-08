@@ -44,7 +44,7 @@ def _assert_layer_geoms(layer: QgsVectorLayer, expected_geom_wkts: list[str]):
 def test_simple_line_reshape(
     preset_features_layer_factory: Callable[
         [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
-    ]
+    ],
 ):
     layer, (feature, *_) = preset_features_layer_factory(
         "l1",
