@@ -11,7 +11,7 @@ jobs:
   create-release-commits:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
       - uses: actions/setup-python@v3
         with:
           python-version: '3.9'
