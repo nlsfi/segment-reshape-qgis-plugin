@@ -32,6 +32,7 @@ from qgis.core import (
     QgsWkbTypes,
 )
 from qgis.gui import QgisInterface, QgsAdvancedDigitizingDockWidget
+from qgis.PyQt.QtWidgets import QApplication
 from segment_reshape.geometry.reshape import (
     _current_edit_command_layers,
     _set_editable_layer_ids,
@@ -40,10 +41,16 @@ from segment_reshape.geometry.reshape import (
 
 @pytest.fixture(scope="session")
 def qgis_iface(qgis_iface: QgisInterface):
+    dock_widget = QgsAdvancedDigitizingDockWidget(qgis_iface.mapCanvas())
     qgis_iface.cadDockWidget = Mock(  # type: ignore[method-assign]
-        return_value=QgsAdvancedDigitizingDockWidget(qgis_iface.mapCanvas())
+        return_value=dock_widget
     )
-    return qgis_iface
+    try:
+        yield qgis_iface
+    finally:
+        dock_widget.deleteLater()
+        QApplication.sendPostedEvents(None, 0)
+        QApplication.processEvents()
 
 
 @pytest.fixture()

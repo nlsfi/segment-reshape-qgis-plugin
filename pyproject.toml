@@ -1,3 +1,85 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "segment-reshape-qgis-plugin"
+dynamic = ["version"]
+description = "QGIS plugin with a map tool to reshape a continuous segment topogically."
+readme = { file = "README.md", content-type = "text/markdown" }
+license = { file = "LICENSE" }
+authors = [{ name = "National Land Survey of Finland", email = "os@nls.fi" }]
+keywords = ["qgis"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Topic :: Software Development :: Libraries",
+    "Typing :: Typed",
+]
+requires-python = ">=3.9"
+dependencies = [
+    "qgis_plugin_tools",
+]
+
+[project.urls]
+Changelog = "https://github.com/nlsfi/segment-reshape-qgis-plugin/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/nlsfi/segment-reshape-qgis-plugin"
+
+[project.entry-points."qgis_plugin_dev_tools"]
+segment_reshape_plugin = "segment_reshape_plugin"
+
+[dependency-groups]
+dev = [
+    "qgis-plugin-dev-tools",
+    "uv",
+]
+test = [
+    # lock here since 1.4.1 has no binaries
+    "atomicwrites==1.4.0",
+    "pyqt5-stubs",
+    "pytest",
+    "pytest-qt",
+    "pytest-cov",
+    "pytest-mock",
+    "pytest-qgis==2.1.0",
+    "pytest-timeout",
+    "pytest-order",
+    "pytest-dotenv",
+    # Pin version for python 3.12 support
+    "coverage[toml]==7.2.7",
+]
+lint = [
+    "pre-commit",
+    "mypy",
+    "black",
+    "ruff",
+    # flake8 libraries not included in ruff
+    "flake8",
+    "flake8-pyproject",
+    "flake8-spellcheck",
+    "flake8-qgis",
+]
+
+[tool.uv]
+default-groups = ["dev", "test", "lint"]
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+include-package-data = true
+
+[tool.setuptools.dynamic]
+version = { attr = "segment_reshape.__version__" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+segment_reshape = ["py.typed"]
+segment_reshape_plugin = ["py.typed", "metadata.txt", "**/*.svg", "**/*.ts"]
+
 [tool.ruff]
 ignore = [
     "ANN101", # Missing type annotation for self in method
@@ -68,14 +150,10 @@ show_column_numbers = true
 [tool.pytest.ini_options]
 minversion = "6.0"
 
-[build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
-
 [tool.qgis_plugin_dev_tools]
 plugin_package_name = "segment_reshape_plugin"
 runtime_requires = [
     "qgis_plugin_tools",
-    "segment-reshape-qgis-plugin"
+    "segment-reshape-qgis-plugin",
 ]
 version_number_source = "distribution"
