@@ -25,7 +25,7 @@ from qgis.core import QgsAbstractGeometry, QgsGeometry, QgsPoint
 
 
 def clone_geometry_safely(
-    geometry: Union[QgsGeometry, QgsAbstractGeometry]
+    geometry: Union[QgsGeometry, QgsAbstractGeometry],
 ) -> QgsGeometry:
     if isinstance(geometry, QgsGeometry):
         original_abstract_geometry = geometry.get()

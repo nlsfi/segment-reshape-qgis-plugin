@@ -127,7 +127,7 @@ def test_calculate_common_segment_for_single_feature_picks_whole_triggered_compo
 ):
     layer, (feature,) = preset_features_layer_factory("source", [trigger_wkt])
 
-    (segment, _, _) = get_common_geometries(
+    segment, _, _ = get_common_geometries(
         layer,
         feature,
         [],
@@ -227,7 +227,7 @@ def test_calculate_common_segment_for_single_feature_results_in_single_reshape_p
 ):
     layer, (feature,) = preset_features_layer_factory("source", [trigger_wkt])
 
-    (_, common_parts, edges) = get_common_geometries(
+    _, common_parts, edges = get_common_geometries(
         layer,
         feature,
         [],
@@ -260,7 +260,7 @@ def test_calculate_common_segment_for_same_polygon_at_both_edges(
         "source", [trigger_wkt, *other_wkts]
     )
 
-    (segment, common_parts, edges) = get_common_geometries(
+    segment, common_parts, edges = get_common_geometries(
         layer,
         feature,
         [(layer, f) for f in other_features],
@@ -307,7 +307,7 @@ def test_calculate_common_segment_for_multiple_lines_results_in_multiple_reshape
         "source", [trigger_wkt, *other_wkts]
     )
 
-    (_, common_parts, _) = get_common_geometries(
+    _, common_parts, _ = get_common_geometries(
         layer,
         feature,
         [(layer, f) for f in other_features],
@@ -364,7 +364,7 @@ def test_calculate_common_segment_for_multiple_lines_results_in_multiple_edges(
         "source", [trigger_wkt, *other_wkts]
     )
 
-    (_, _, edges) = get_common_geometries(
+    _, _, edges = get_common_geometries(
         layer,
         feature,
         [(layer, f) for f in other_features],
@@ -532,7 +532,7 @@ def test_calculate_common_segment_uses_xy_for_calculation_and_preserves_source_z
         "source", [trigger_wkt, *other_wkts]
     )
 
-    (segment, _, _) = get_common_geometries(
+    segment, _, _ = get_common_geometries(
         layer,
         feature,
         [(layer, f) for f in other_features],
@@ -606,7 +606,7 @@ def test_calculate_common_segment_line_trigger_expanded(
         "source", [trigger_wkt, *other_wkts]
     )
 
-    (segment, _, _) = get_common_geometries(
+    segment, _, _ = get_common_geometries(
         layer,
         feature,
         [(layer, f) for f in other_features],
@@ -629,7 +629,7 @@ def test_calculate_common_segment_line_broken_by_points_as_edges(
         "other", ["POINT(0 0)", "POINT(3 3)"]
     )
 
-    (segment, common_parts, edges) = get_common_geometries(
+    segment, common_parts, edges = get_common_geometries(
         layer,
         feature,
         [(other_layer, point_1), (other_layer, point_2)],
@@ -684,7 +684,7 @@ def test_calculate_common_segment_line_having_related_feature_not_at_vertex_trig
         "source", [trigger_wkt, *other_wkts]
     )
 
-    (segment, _, _) = get_common_geometries(
+    segment, _, _ = get_common_geometries(
         layer,
         feature,
         [(layer, f) for f in other_features],
@@ -722,7 +722,7 @@ def test_calculate_common_segment_line_having_related_feature_linear_intersect_t
         "source", [trigger_wkt, *other_wkts]
     )
 
-    (segment, _, _) = get_common_geometries(
+    segment, _, _ = get_common_geometries(
         layer,
         feature,
         [(layer, f) for f in other_features],
@@ -767,7 +767,7 @@ def test_calculate_common_segment_polygon_ring_boundary_crossed(
         "source", [trigger_wkt, *other_wkts]
     )
 
-    (segment, _, _) = get_common_geometries(
+    segment, _, _ = get_common_geometries(
         layer,
         feature,
         [(layer, f) for f in other_features],
@@ -837,7 +837,7 @@ def test_calculate_common_segment_closed_linestring_boundary_crossed(
         "source", [trigger_wkt, *other_wkts]
     )
 
-    (segment, common_parts, _) = get_common_geometries(
+    segment, common_parts, _ = get_common_geometries(
         layer,
         feature,
         [(layer, f) for f in other_features],
@@ -884,7 +884,7 @@ def test_calculate_common_segment_line_having_related_feature_contains_trigger_a
         "source", [trigger_wkt, *other_wkts]
     )
 
-    (segment, _, _) = get_common_geometries(
+    segment, _, _ = get_common_geometries(
         layer,
         feature,
         [(layer, f) for f in other_features],
@@ -899,7 +899,7 @@ def test_calculate_common_segment_line_having_related_feature_contains_trigger_a
 def test_find_related_features_no_results_by_default_if_topological_editing_disabled(
     preset_features_layer_factory: Callable[
         [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
-    ]
+    ],
 ):
     source_layer, (source_feature,) = preset_features_layer_factory(
         "source", ["LINESTRING(0 0, 1 1)"]
@@ -918,7 +918,7 @@ def test_find_related_features_no_results_by_default_if_topological_editing_disa
 def test_find_related_features_results_by_default_from_project_vector_layers(
     preset_features_layer_factory: Callable[
         [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
-    ]
+    ],
 ):
     source_layer, (source_feature,) = preset_features_layer_factory(
         "source", ["LINESTRING(0 0, 1 1)"]
@@ -942,7 +942,7 @@ def test_find_related_features_results_by_default_from_project_vector_layers(
 def test_find_related_features_uses_custom_list_if_given_if_topological_editing_disabled(
     preset_features_layer_factory: Callable[
         [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
-    ]
+    ],
 ):
     source_layer, (source_feature,) = preset_features_layer_factory(
         "source", ["LINESTRING(0 0, 1 1)"]
@@ -968,7 +968,7 @@ def test_find_related_features_uses_custom_list_if_given_if_topological_editing_
 def test_find_related_features_uses_custom_list_if_given(
     preset_features_layer_factory: Callable[
         [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
-    ]
+    ],
 ):
     source_layer, (source_feature,) = preset_features_layer_factory(
         "source", ["LINESTRING(0 0, 1 1)"]
@@ -992,7 +992,7 @@ def test_find_related_features_uses_custom_list_if_given(
 def test_find_related_features_finds_features_touching_the_target(
     preset_features_layer_factory: Callable[
         [str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]
-    ]
+    ],
 ):
     source_layer, (source_feature,) = preset_features_layer_factory(
         "source", ["LINESTRING(0 0, 1 1)"]

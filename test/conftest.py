@@ -74,7 +74,7 @@ def memory_layer_factory() -> Callable[[str, QgsWkbTypes.Type], QgsVectorLayer]:
 
 @pytest.fixture()
 def preset_features_layer_factory(
-    memory_layer_factory: Callable[[str, QgsWkbTypes.Type], QgsVectorLayer]
+    memory_layer_factory: Callable[[str, QgsWkbTypes.Type], QgsVectorLayer],
 ) -> Callable[[str, list[str]], tuple[QgsVectorLayer, list[QgsFeature]]]:
     def _factory(
         name: str, geoms: list[Union[str, QgsGeometry]]
